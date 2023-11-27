@@ -1,7 +1,8 @@
 // main.cpp
+
 #include <boost/program_options.hpp>
 #include <iostream>
-#include <string>
+
 #include "BasicUser.hpp"
 #include "ProxyServer.hpp"
 
@@ -11,44 +12,55 @@ int main(int argc, char *argv[])
 {
     po::options_description desc("Allowed options");
 
-    desc.add_options()("mode", po::value<std::string>()->required(), "Mode Selection Proxy/User")("secret", po::value<std::string>()->required(), "secret value");
+    desc.add_options()("mode", po::value<std::string>()->required(),
+                       "Mode Selection Proxy/User")(
+        "secret", po::value<std::string>()->required(), "Secret value");
 
-    boost::program_options::variables_map vm;
+    po::variables_map vm;
 
     try
     {
-        boost::program_options::store(
-            boost::program_options::command_line_parser(argc, argv)
-                .options(desc)
-                .run(),
-            vm);
-        boost::program_options::notify(vm);
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::notify(vm);
     }
-    catch (boost::program_options::error &e)
+    catch (po::error &e)
     {
-        std::cout << "ERROR: " << e.what() << "\n";
-        std::cout << desc << "\n";
+        std::cerr << "ERROR: " << e.what() << "\n";
+        std::cerr << desc << "\n";
         return 1;
     }
 
-    std::string mode(vm["mode"].as<std::string>());
-    std::string secret(vm["secret"].as<std::string>());
+    std::string mode = vm["mode"].as<std::string>();
+    std::string secret = vm["secret"].as<std::string>();
 
-    if (mode == "Proxy")
+    try
     {
-        ProxyServer proxyServer(secret);
-        proxyServer.start();
+        if (mode == "Proxy")
+        {
+            ProxyServer proxy(secret);
+            proxy.start();
+        }
+        else if (mode == "User")
+        {
+            BasicUser user(secret);
+            user.start();
+        }
+        else
+        {
+            throw po::validation_error(po::validation_error::invalid_option_value, "mode");
+        }
     }
-    else if (mode == "User")
+    catch (const po::validation_error &e)
     {
-        BasicUser basicUser(secret);
-        basicUser.start();
+        std::cerr << "Invalid mode. Use --mode Proxy or --mode User.\n";
+        return 1;
     }
-    else
+    catch (const std::exception &e)
     {
-        std::cerr << "Invalid mode. Use 'Proxy' or 'User'.\n";
+        std::cerr << "Exception: " << e.what() << "\n";
         return 1;
     }
 
     return 0;
 }
+
