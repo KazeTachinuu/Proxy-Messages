@@ -1,39 +1,52 @@
 // main.cpp
+#include <boost/program_options.hpp>
 #include <iostream>
-#include "ProxyServer.hpp"
+
 #include "BasicUser.hpp"
+#include "ProxyServer.hpp"
 
-int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " --mode <Proxy/User> --secret <secretvalue>" << std::endl;
+namespace po = boost::program_options;
+
+int main(int argc, char *argv[])
+{
+    po::options_description desc("Allowed options");
+
+    desc.add_options()("mode", po::value<std::string>()->required(),
+                       "Mode Selection Proxy/User")(
+        "secret", po::value<std::string>()->required(), "Secret value");
+
+    po::variables_map vm;
+
+    try
+    {
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::notify(vm);
+    }
+    catch (po::error &e)
+    {
+        std::cerr << "ERROR: " << e.what() << "\n";
+        std::cerr << desc << "\n";
         return 1;
     }
 
-    std::string mode;
-    std::string secret;
+    std::string mode(vm["mode"].as<std::string>());
+    std::string secret(vm["secret"].as<std::string>());
 
-    for (int i = 1; i < argc; i += 2) {
-        std::string arg = argv[i];
-        if (arg == "--mode") {
-            mode = argv[i + 1];
-        } else if (arg == "--secret") {
-            secret = argv[i + 1];
-        }
-    }
-
-    if (mode.empty() || (mode != "Proxy" && mode != "User") || secret.empty()) {
-        std::cerr << "Invalid command line arguments. Please provide valid arguments." << std::endl;
-        return 1;
-    }
-
-    if (mode == "Proxy") {
+    if (mode == "Proxy")
+    {
         ProxyServer proxy(secret);
         proxy.start();
-    } else {
+    }
+    else if (mode == "User")
+    {
         BasicUser user(secret);
         user.start();
+    }
+    else
+    {
+        std::cerr << "Invalid mode. Use --mode Proxy or --mode User.\n";
+        return 1;
     }
 
     return 0;
 }
-
