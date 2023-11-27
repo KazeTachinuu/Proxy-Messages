@@ -1,7 +1,7 @@
 // main.cpp
 #include <boost/program_options.hpp>
 #include <iostream>
-
+#include <string>
 #include "BasicUser.hpp"
 #include "ProxyServer.hpp"
 
@@ -11,21 +11,23 @@ int main(int argc, char *argv[])
 {
     po::options_description desc("Allowed options");
 
-    desc.add_options()("mode", po::value<std::string>()->required(),
-                       "Mode Selection Proxy/User")(
-        "secret", po::value<std::string>()->required(), "Secret value");
+    desc.add_options()("mode", po::value<std::string>()->required(), "Mode Selection Proxy/User")("secret", po::value<std::string>()->required(), "secret value");
 
-    po::variables_map vm;
+    boost::program_options::variables_map vm;
 
     try
     {
-        po::store(po::parse_command_line(argc, argv, desc), vm);
-        po::notify(vm);
+        boost::program_options::store(
+            boost::program_options::command_line_parser(argc, argv)
+                .options(desc)
+                .run(),
+            vm);
+        boost::program_options::notify(vm);
     }
-    catch (po::error &e)
+    catch (boost::program_options::error &e)
     {
-        std::cerr << "ERROR: " << e.what() << "\n";
-        std::cerr << desc << "\n";
+        std::cout << "ERROR: " << e.what() << "\n";
+        std::cout << desc << "\n";
         return 1;
     }
 
@@ -34,17 +36,17 @@ int main(int argc, char *argv[])
 
     if (mode == "Proxy")
     {
-        ProxyServer proxy(secret);
-        proxy.start();
+        ProxyServer proxyServer(secret);
+        proxyServer.start();
     }
     else if (mode == "User")
     {
-        BasicUser user(secret);
-        user.start();
+        BasicUser basicUser(secret);
+        basicUser.start();
     }
     else
     {
-        std::cerr << "Invalid mode. Use --mode Proxy or --mode User.\n";
+        std::cerr << "Invalid mode. Use 'Proxy' or 'User'.\n";
         return 1;
     }
 
