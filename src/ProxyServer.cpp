@@ -4,12 +4,12 @@
 
 ProxyServer::ProxyServer(const std::string &secret)
     : acceptor_(io_context_, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), 12345)),
-      firstUserSocket_(io_context_),
-      secondUserSocket_(io_context_),
-      timer_(io_context_),
-      secret_(secret),
-      hasFirstUserConnected_(false),
-      hasSecondUserConnected_(false)
+    firstUserSocket_(io_context_),
+    secondUserSocket_(io_context_),
+    timer_(io_context_),
+    secret_(secret),
+    hasFirstUserConnected_(false),
+    hasSecondUserConnected_(false)
 {
 }
 
@@ -54,11 +54,11 @@ void ProxyServer::handleFirstUser()
                     std::cout << "Second user connected within 30 seconds. Informing users and handling communication.\n";
 
                     // Inform both users about the connection
-                    relayMessage(firstUserSocket_, secondUserSocket_);
-                    relayMessage(secondUserSocket_, firstUserSocket_);
+                    relayMessage(firstUserSocket_, "Second user connected. You are now connected to each other.\n", [](const boost::system::error_code&) {});
+                    relayMessage(secondUserSocket_, "You are now connected to the first user.\n", [](const boost::system::error_code&) {});
 
-                    // Handle communication between connected users
-                    handleSecondUser(std::move(secondUserSocket_));
+                    // Start communication between connected users
+                    startCommunication();
                 }
             });
     }
@@ -68,32 +68,86 @@ void ProxyServer::handleFirstUser()
     }
 }
 
-void ProxyServer::handleSecondUser(boost::asio::ip::tcp::socket secondUserSocket)
+void ProxyServer::startCommunication()
 {
-    // Implement logic for handling communication between connected users
-    // You have access to both firstUserSocket_ and secondUserSocket here
-
-    // For simplicity, let's implement a basic message exchange
-    relayMessage(firstUserSocket_, secondUserSocket);
-    relayMessage(secondUserSocket, firstUserSocket_);
+    // Start asynchronous operations to continuously read and write messages
+    handleCommunication(firstUserSocket_, secondUserSocket_);
+    handleCommunication(secondUserSocket_, firstUserSocket_);
 }
 
-void ProxyServer::relayMessage(boost::asio::ip::tcp::socket &sender,
-                               boost::asio::ip::tcp::socket &receiver)
+void ProxyServer::handleCommunication(boost::asio::ip::tcp::socket &sender,
+                                      boost::asio::ip::tcp::socket &receiver)
 {
-    // Read message from the sender
-    boost::asio::streambuf buffer;
-    boost::asio::read_until(sender, buffer, '\n');
-    std::istream is(&buffer);
-    std::string message;
-    std::getline(is, message);
+    // Start asynchronous read operation on sender
+    boost::asio::async_read_until(sender, buffer, '\n',
+                                  [this, &sender, &receiver](const boost::system::error_code &readError, std::size_t bytesRead) {
+                                      if (!readError) {
+                                          std::istream is(&buffer);
+                                          std::string message;
+                                          std::getline(is, message);
 
-    // Print the message in the proxy's terminal
-    std::cout << "Proxy Server received message: " << message << std::endl;
+                                          // Print the message in the proxy's terminal
+                                          std::cout << "Proxy Server received message: " << message << std::endl;
 
-    // Relay the message to the receiver
-    boost::asio::write(receiver, boost::asio::buffer(message + "\n"));
+                                          // Relay the message to the receiver
+                                          relayMessage(receiver, message + "\n", [this, &sender, &receiver](const boost::system::error_code&) {
+                                              // Continue handling communication
+                                              handleCommunication(sender, receiver);
+                                          });
+                                      } else {
+                                          // Handle the case where the sender socket is closed
+                                          if (readError == boost::asio::error::eof) {
+                                              std::cout << "Sender socket closed. Stopping communication.\n";
+                                          } else {
+                                              std::cerr << "Error while reading message: " << readError.message() << std::endl;
+                                          }
+                                      }
+                                  });
+
+    // Start asynchronous read operation on receiver
+    boost::asio::async_read_until(receiver, buffer, '\n',
+                                  [this, &receiver, &sender](const boost::system::error_code &readError, std::size_t bytesRead) {
+                                      if (!readError) {
+                                          std::istream is(&buffer);
+                                          std::string message;
+                                          std::getline(is, message);
+
+                                          // Print the message in the proxy's terminal
+                                          std::cout << "Proxy Server received message: " << message << std::endl;
+
+                                          // Relay the message to the sender
+                                          relayMessage(sender, message + "\n", [this, &receiver, &sender](const boost::system::error_code&) {
+                                              // Continue handling communication
+                                              handleCommunication(sender, receiver);
+                                          });
+                                      } else {
+                                          // Handle the case where the receiver socket is closed
+                                          if (readError == boost::asio::error::eof) {
+                                              std::cout << "Receiver socket closed. Stopping communication.\n";
+                                          } else {
+                                              std::cerr << "Error while reading message: " << readError.message() << std::endl;
+                                          }
+                                      }
+                                  });
 }
+
+
+void ProxyServer::relayMessage(boost::asio::ip::tcp::socket &receiver, const std::string &message, std::function<void(const boost::system::error_code&)> callback)
+{
+    // Capture the message variable
+    std::string capturedMessage = message;
+
+    // Relay the message to the receiver's terminal
+    std::cout << "User received message: " << capturedMessage;
+
+    // Relay the message to the receiver's socket
+    boost::asio::async_write(receiver, boost::asio::buffer(capturedMessage),
+                             [callback](const boost::system::error_code &writeError, std::size_t /*bytesWritten*/) {
+                                 callback(writeError);
+                             });
+}
+
+
 
 void ProxyServer::startTimer()
 {
@@ -110,4 +164,3 @@ void ProxyServer::startTimer()
         }
     });
 }
-

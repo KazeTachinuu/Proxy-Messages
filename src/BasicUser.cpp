@@ -6,7 +6,7 @@
 
 BasicUser::BasicUser(const std::string &secret)
     : socket_(io_context_),
-      secret_(secret)
+    secret_(secret)
 {
 }
 
@@ -20,7 +20,18 @@ void BasicUser::start()
 
     std::cout << "User connected to Proxy Server with secret: " << secret_ << std::endl;
 
-    handleCommunication();
+    // Start a separate thread to handle user input asynchronously
+    std::thread inputThread([this]() {
+        while (true) {
+            handleCommunication();
+        }
+    });
+
+    // Run the IO context to handle asynchronous operations
+    io_context_.run();
+
+    // Wait for the input thread to finish
+    inputThread.join();
 }
 
 void BasicUser::handleCommunication()
@@ -32,14 +43,4 @@ void BasicUser::handleCommunication()
 
     // Send the message to the Proxy Server
     boost::asio::write(socket_, boost::asio::buffer(message + "\n"));
-
-    // Read the response from the Proxy Server
-    boost::asio::streambuf buffer;
-    boost::asio::read_until(socket_, buffer, '\n');
-    std::istream is(&buffer);
-    std::string response;
-    std::getline(is, response);
-
-    // Print the response
-    std::cout << "Proxy Server response: " << response << std::endl;
 }
