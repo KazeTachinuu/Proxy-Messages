@@ -41,7 +41,7 @@ void ProxyServer::startAccept()
                 {
                     notifyUser(newUserSocket, "Other users are already connected.\n");
 
-                    // If there are two users connected, handle communication between them
+                    // If there are two users connected, handle bidirectional communication
                     if (userSockets_.size() == 2)
                     {
                         handleConnectedUsers(userSockets_[0], userSockets_[1]);
@@ -98,19 +98,25 @@ void ProxyServer::handleConnectedUsers(const std::shared_ptr<boost::asio::ip::tc
     // Inform user B that it has been connected to user A
     notifyUser(userSocketB, "You are now connected to User A.\n");
 
-    // Notify user B with "hello" from user A
-    handleUserMessage("User A",userSocketB,"hello\n");
-
+    // Notify user B with "[CMD]ECHOREPLY snowpack" from user A
+    handleUserMessage("User A", userSocketA, "User B", userSocketB, "[CMD]ECHOREPLY snowpack\n");
+    handleUserMessage("User B", userSocketB, "User A", userSocketA, "snowpack\n");
 }
 
 void ProxyServer::handleUserMessage(const std::string& sender_name,
+                                    const std::shared_ptr<boost::asio::ip::tcp::socket>& sender,
+                                    const std::string& receiver_name,
                                     const std::shared_ptr<boost::asio::ip::tcp::socket>& receiver,
                                     const std::string& message)
 {
     // Construct the complete message including sender's name
     std::string completeMessage = sender_name + ": " + message;
 
-    std::cout << completeMessage << std::endl;
+    std::cout << "Proxy Server: Relaying message from " << sender_name << " to " << receiver_name << ": " << message << std::endl;
+
     // Notify the receiver with the complete message
     notifyUser(receiver, completeMessage);
+
 }
+
+
