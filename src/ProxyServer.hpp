@@ -3,37 +3,26 @@
 #ifndef PROXY_SERVER_HPP
 #define PROXY_SERVER_HPP
 
-#include <string>
-#include <memory>
 #include <boost/asio.hpp>
-#include <iostream>
-#include <functional>
-
+#include <memory>
+#include <vector>
 
 class ProxyServer
 {
 public:
-    ProxyServer(const std::string &secret);
+    ProxyServer();
 
     void start();
 
 private:
     void startAccept();
-    void handleFirstUser();
-    void startCommunication();
-    void handleCommunication(boost::asio::ip::tcp::socket &sender, boost::asio::ip::tcp::socket &receiver);
-    void relayMessage(boost::asio::ip::tcp::socket &receiver, const std::string &message, std::function<void(const boost::system::error_code&)> callback);
-    void startTimer();
+    void notifyAllUsers(const std::shared_ptr<boost::asio::ip::tcp::socket>& notifyingUser, const std::string& message);
 
     boost::asio::io_context io_context_;
     boost::asio::ip::tcp::acceptor acceptor_;
-    boost::asio::ip::tcp::socket firstUserSocket_;
-    boost::asio::ip::tcp::socket secondUserSocket_;
-    boost::asio::steady_timer timer_;
-    std::string secret_;
-    bool hasFirstUserConnected_;
-    bool hasSecondUserConnected_;
-    boost::asio::streambuf buffer;
+
+    // Store connected user sockets
+    std::vector<std::shared_ptr<boost::asio::ip::tcp::socket>> userSockets_;
 };
 
 #endif // PROXY_SERVER_HPP

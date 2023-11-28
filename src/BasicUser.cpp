@@ -2,11 +2,9 @@
 
 #include "BasicUser.hpp"
 #include <iostream>
-#include <string>
 
-BasicUser::BasicUser(const std::string &secret)
-    : socket_(io_context_),
-    secret_(secret)
+BasicUser::BasicUser()
+    : socket_(io_context_)
 {
 }
 
@@ -18,29 +16,29 @@ void BasicUser::start()
 
     boost::asio::connect(socket_, endpoint_iterator);
 
-    std::cout << "User connected to Proxy Server with secret: " << secret_ << std::endl;
+    std::cout << "User connected to Proxy Server.\n";
 
-    // Start a separate thread to handle user input asynchronously
-    std::thread inputThread([this]() {
-        while (true) {
-            handleCommunication();
-        }
-    });
+    // Start asynchronous message receiving
+    asyncReceive();
 
-    // Run the IO context to handle asynchronous operations
     io_context_.run();
-
-    // Wait for the input thread to finish
-    inputThread.join();
 }
 
-void BasicUser::handleCommunication()
+void BasicUser::asyncReceive()
 {
-    // Allow the user to type the message
-    std::string message;
-    std::cout << "Type a message: ";
-    std::getline(std::cin, message);
+    socket_.async_receive(
+        boost::asio::buffer(receiveBuffer_),
+        [this](const boost::system::error_code &error, std::size_t bytes_received) {
+            if (!error)
+            {
+                std::cout << "Received message from Proxy: " << std::string(receiveBuffer_.data(), bytes_received) << "\n";
 
-    // Send the message to the Proxy Server
-    boost::asio::write(socket_, boost::asio::buffer(message + "\n"));
+                // Continue listening for messages
+                asyncReceive();
+            }
+            else
+            {
+                std::cerr << "Error receiving message: " << error.message() << "\n";
+            }
+        });
 }

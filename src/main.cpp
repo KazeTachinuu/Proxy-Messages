@@ -1,5 +1,6 @@
-#include <boost/program_options.hpp>
+// main.cpp
 #include <iostream>
+#include <boost/program_options.hpp>
 #include "BasicUser.hpp"
 #include "ProxyServer.hpp"
 
@@ -10,8 +11,7 @@ int main(int argc, char *argv[])
     po::options_description desc("Allowed options");
 
     desc.add_options()("mode", po::value<std::string>()->required(),
-                       "Mode Selection Proxy/User")(
-        "secret", po::value<std::string>()->default_value("0"), "Secret value");
+                       "Mode Selection Proxy/User");
 
     po::variables_map vm;
 
@@ -28,18 +28,17 @@ int main(int argc, char *argv[])
     }
 
     std::string mode = vm["mode"].as<std::string>();
-    std::string secret = vm["secret"].as<std::string>();
 
     try
     {
         if (mode == "Proxy")
         {
-            ProxyServer proxy(secret);
+            ProxyServer proxy;
             proxy.start();
         }
         else if (mode == "User")
         {
-            BasicUser user(secret);
+            BasicUser user;
             try
             {
                 user.start();

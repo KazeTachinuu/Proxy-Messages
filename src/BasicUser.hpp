@@ -3,24 +3,24 @@
 #ifndef BASIC_USER_HPP
 #define BASIC_USER_HPP
 
-#include <string>
-#include <memory>
 #include <boost/asio.hpp>
 
 class BasicUser
 {
 public:
-    BasicUser(const std::string &secret);
+    BasicUser();
 
     void start();
 
-private:
-    void handleCommunication();
+    // Function to asynchronously receive messages
+    void asyncReceive();
 
+private:
     boost::asio::io_context io_context_;
     boost::asio::ip::tcp::socket socket_;
-    std::string secret_;
-    boost::asio::streambuf buffer;
+
+    // Buffer to store received messages
+    std::array<char, 1024> receiveBuffer_;
 };
 
 #endif // BASIC_USER_HPP
