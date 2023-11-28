@@ -16,7 +16,7 @@ public:
 
 private:
     void startAccept();
-    void notifyAllUsers(const std::shared_ptr<boost::asio::ip::tcp::socket>& notifyingUser, const std::string& message);
+    void notifyUser(const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocket, const std::string& message);
 
     boost::asio::io_context io_context_;
     boost::asio::ip::tcp::acceptor acceptor_;

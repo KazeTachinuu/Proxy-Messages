@@ -26,8 +26,15 @@ void ProxyServer::startAccept()
                 auto newUserSocket = std::make_shared<boost::asio::ip::tcp::socket>(std::move(userSocket));
                 userSockets_.push_back(newUserSocket);
 
-                // Notify all users about the new connection (excluding the user itself)
-                notifyAllUsers(newUserSocket, "New user connected");
+                // Notify only the connected user about the existing users
+                if (userSockets_.size() > 1)
+                {
+                    notifyUser(newUserSocket, "Other users are already connected.");
+                }
+                else
+                {
+                    notifyUser(newUserSocket, "No other users are currently connected. Waiting for connections.");
+                }
 
                 // Handle the connected user here if needed
             }
@@ -36,17 +43,10 @@ void ProxyServer::startAccept()
         });
 }
 
-void ProxyServer::notifyAllUsers(const std::shared_ptr<boost::asio::ip::tcp::socket>& notifyingUser, const std::string& message)
+void ProxyServer::notifyUser(const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocket, const std::string& message)
 {
-    for (const auto& userSocket : userSockets_)
-    {
-        // Exclude the notifying user
-        if (userSocket != notifyingUser)
-        {
-            boost::asio::async_write(
-                *userSocket,
-                boost::asio::buffer(message),
-                [](const boost::system::error_code&, std::size_t) {});
-        }
-    }
+    boost::asio::async_write(
+        *userSocket,
+        boost::asio::buffer(message),
+        [](const boost::system::error_code&, std::size_t) {});
 }
