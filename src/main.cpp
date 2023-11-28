@@ -1,6 +1,7 @@
 // main.cpp
-#include <iostream>
 #include <boost/program_options.hpp>
+#include <iostream>
+
 #include "BasicUser.hpp"
 #include "ProxyServer.hpp"
 
@@ -33,7 +34,7 @@ int main(int argc, char *argv[])
     {
         if (mode == "Proxy")
         {
-            ProxyServer proxy;
+            ProxyServer proxy(12345);
             proxy.start();
         }
         else if (mode == "User")
@@ -47,7 +48,8 @@ int main(int argc, char *argv[])
             {
                 if (e.code() == boost::asio::error::connection_refused)
                 {
-                    std::cerr << "ERROR: Connection refused. The proxy server may not be running yet.\n";
+                    std::cerr << "ERROR: Connection refused. The proxy server "
+                                 "may not be running yet.\n";
                 }
                 else
                 {
@@ -58,7 +60,8 @@ int main(int argc, char *argv[])
         }
         else
         {
-            throw po::validation_error(po::validation_error::invalid_option_value, "mode");
+            throw po::validation_error(
+                po::validation_error::invalid_option_value, "mode");
         }
     }
     catch (const po::validation_error &e)
