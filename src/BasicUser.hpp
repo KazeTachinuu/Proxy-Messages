@@ -1,9 +1,9 @@
-// BasicUser.hpp
-
 #ifndef BASIC_USER_HPP
 #define BASIC_USER_HPP
 
 #include <boost/asio.hpp>
+#include <iostream>
+#include <thread>
 
 class BasicUser
 {
@@ -14,9 +14,12 @@ public:
 
 private:
     void startRead();
+    void sendMessage(const std::string& message);
+    void startDisconnectTimer();
 
     boost::asio::io_context io_context_;
     boost::asio::ip::tcp::socket socket_;
+    boost::asio::deadline_timer disconnectTimer_;
     boost::asio::streambuf receiveBuffer_;
 };
 

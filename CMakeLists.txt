@@ -16,6 +16,7 @@ set(SRC_FILES
     ${SRC_DIR}/BasicUser.cpp
     ${SRC_DIR}/ProxyServer.cpp
     ${SRC_DIR}/main.cpp
+        ${SRC_DIR}/CommandHandler.cpp
 )
 
 # Create an executable in the build directory

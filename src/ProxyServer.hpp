@@ -1,12 +1,19 @@
-// ProxyServer.hpp
-
 #ifndef PROXY_SERVER_HPP
 #define PROXY_SERVER_HPP
 
 #include <boost/asio.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <iostream>
-#include <map>
+#include <vector>
+#include <memory>
+
+class CommandHandler; // Forward declaration
+
+enum class MessageType
+{
+    CMD,
+    MSG,
+    UNKNOWN
+};
 
 class ProxyServer
 {
@@ -15,28 +22,21 @@ public:
 
     void start();
 
+    void notifyUser(const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocket, const std::string& message);
+    void notifyAllUsers(const std::string& message, const std::vector<std::shared_ptr<boost::asio::ip::tcp::socket>>& excludedSockets = {});
+    std::size_t getUserCount() const;
+
 private:
     void startAccept();
-    void notifyUser(const std::shared_ptr<boost::asio::ip::tcp::socket> &userSocket, const std::string &message);
-    void handleCommunication(const std::shared_ptr<boost::asio::ip::tcp::socket> &newUserSocket);
-    void handleUserMessage(const std::shared_ptr<boost::asio::ip::tcp::socket> &sender,
-                           const std::shared_ptr<boost::asio::ip::tcp::socket> &receiver,
-                           const std::string &message);
-    void handleUserReply(const std::shared_ptr<boost::asio::ip::tcp::socket> &sender,
-                         const std::shared_ptr<boost::asio::ip::tcp::socket> &receiver,
-                         const std::string &message);
-
-    void notifyAllUsers(const std::shared_ptr<boost::asio::ip::tcp::socket> &excludingUser,
-                        const std::string &message);
+    void handleCommunication(const std::shared_ptr<boost::asio::ip::tcp::socket>& newUserSocket);
+    void handleMessage(const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocket, const std::string& message);
 
     boost::asio::io_context io_context_;
     boost::asio::ip::tcp::acceptor acceptor_;
-    std::vector<std::shared_ptr<boost::asio::ip::tcp::socket>> userSockets_;
-    std::shared_ptr<boost::asio::ip::tcp::socket> waitingUser_;
-    boost::asio::deadline_timer waitingTimer_;
-    boost::asio::streambuf receiveBuffer_;
     unsigned short port_;
-    std::map<std::shared_ptr<boost::asio::ip::tcp::socket>, std::size_t> userMap_;
+    std::vector<std::shared_ptr<boost::asio::ip::tcp::socket>> userSockets_;
+    boost::asio::streambuf receiveBuffer_;
+    std::unique_ptr<CommandHandler> commandHandler_; // Use a pointer
 };
 
 #endif // PROXY_SERVER_HPP

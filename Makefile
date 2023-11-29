@@ -153,6 +153,30 @@ src/BasicUser.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/BasicUser.cpp.s
 .PHONY : src/BasicUser.cpp.s
 
+src/CommandHandler.o: src/CommandHandler.cpp.o
+.PHONY : src/CommandHandler.o
+
+# target to build an object file
+src/CommandHandler.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/CommandHandler.cpp.o
+.PHONY : src/CommandHandler.cpp.o
+
+src/CommandHandler.i: src/CommandHandler.cpp.i
+.PHONY : src/CommandHandler.i
+
+# target to preprocess a source file
+src/CommandHandler.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/CommandHandler.cpp.i
+.PHONY : src/CommandHandler.cpp.i
+
+src/CommandHandler.s: src/CommandHandler.cpp.s
+.PHONY : src/CommandHandler.s
+
+# target to generate assembly for a file
+src/CommandHandler.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/CommandHandler.cpp.s
+.PHONY : src/CommandHandler.cpp.s
+
 src/ProxyServer.o: src/ProxyServer.cpp.o
 .PHONY : src/ProxyServer.o
 
@@ -213,6 +237,9 @@ help:
 	@echo "... src/BasicUser.o"
 	@echo "... src/BasicUser.i"
 	@echo "... src/BasicUser.s"
+	@echo "... src/CommandHandler.o"
+	@echo "... src/CommandHandler.i"
+	@echo "... src/CommandHandler.s"
 	@echo "... src/ProxyServer.o"
 	@echo "... src/ProxyServer.i"
 	@echo "... src/ProxyServer.s"

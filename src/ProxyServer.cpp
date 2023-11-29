@@ -1,13 +1,11 @@
-// ProxyServer.cpp
-
 #include "ProxyServer.hpp"
-#include <iostream>
-#include <map>
+#include "CommandHandler.hpp"
+
 
 ProxyServer::ProxyServer(unsigned short port)
     : acceptor_(io_context_, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
-    waitingTimer_(io_context_),
-    port_(port)  // Initialize the port member
+    port_(port),
+    commandHandler_(std::make_unique<CommandHandler>(*this)) // Initialize the CommandHandler with a reference to this ProxyServer
 {
 }
 
@@ -18,84 +16,121 @@ void ProxyServer::start()
     io_context_.run();
 }
 
+void ProxyServer::notifyUser(const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocket, const std::string& message)
+{
+    boost::asio::async_write(
+        *userSocket, boost::asio::buffer(message),
+        [](const boost::system::error_code&, std::size_t) {});
+}
+
+void ProxyServer::notifyAllUsers(const std::string& message, const std::vector<std::shared_ptr<boost::asio::ip::tcp::socket>>& excludedSockets)
+{
+    for (const auto& userSocket : userSockets_)
+    {
+        // Check if the current userSocket is not in the excludedSockets list
+        if (std::find(excludedSockets.begin(), excludedSockets.end(), userSocket) == excludedSockets.end())
+        {
+            notifyUser(userSocket, message);
+        }
+    }
+}
+
+std::size_t ProxyServer::getUserCount() const
+{
+    return userSockets_.size();
+}
+
 void ProxyServer::startAccept()
 {
     acceptor_.async_accept(
-        [this](const boost::system::error_code &error, boost::asio::ip::tcp::socket userSocket) {
+        [this](const boost::system::error_code& error, boost::asio::ip::tcp::socket userSocket) {
             if (!error)
             {
                 auto newUserSocket = std::make_shared<boost::asio::ip::tcp::socket>(std::move(userSocket));
-                std::cout << "Proxy Server: User " + std::to_string(userSockets_.size()+1) + " connected.\n";
-                notifyUser(newUserSocket,"User " + std::to_string(userSockets_.size()+1) + " connected.\n");
+                std::cout << "User connected.\n";
 
                 // Store the connected user socket
                 userSockets_.push_back(newUserSocket);
 
-                // Notify the connected user about the existing users
-                if (userSockets_.size() > 1)
-                {
-                    // Notify the new user about the existing users
-                    notifyUser(newUserSocket, std::to_string(userSockets_.size()-1)+" users are already connected.\n");
+                // Notify all users about the new connection
+                notifyAllUsers("User connected.\n", {newUserSocket});
 
-                    // Add the new user to the user map
-                    userMap_[newUserSocket] = userSockets_.size();
-
-                    notifyAllUsers(newUserSocket,"User " + std::to_string(userMap_[newUserSocket]) + " has connected.\n");
-                }
-                else
-                {
-                    notifyUser(newUserSocket,
-                               "No other users are currently connected. Waiting 30 seconds "
-                               "for connections.\n");
-
-                    // Start waiting timer for the first user
-                    waitingUser_ = newUserSocket;
-                    waitingTimer_.expires_from_now(boost::posix_time::seconds(30));
-                    waitingTimer_.async_wait(
-                        [this](const boost::system::error_code &error) {
-                            if (!error)
-                            {
-                                std::cout
-                                    << "No other user connected within 30 seconds. "
-                                       "Closing waiting user connection.\n";
-                                // Notify the waiting user about the timeout
-                                notifyUser(waitingUser_,
-                                           "No other user connected within 30 "
-                                           "seconds. Closing connection.\n");
-                                // Close the socket
-                                waitingUser_->close();
-                                waitingUser_ = nullptr;
-                                userSockets_.clear();
-                            }
-                        });
-                }
-
-                // Handle the connected user here if needed
+                // Handle the communication for the connected user
+                handleCommunication(newUserSocket);
             }
 
             startAccept();
         });
 }
 
-void ProxyServer::notifyUser(const std::shared_ptr<boost::asio::ip::tcp::socket> &userSocket, const std::string &message)
+MessageType getMessageType(const std::string& message)
 {
-    boost::asio::async_write(
-        *userSocket, boost::asio::buffer(message),
-        [](const boost::system::error_code &, std::size_t) {});
-}
-
-
-void ProxyServer::notifyAllUsers(const std::shared_ptr<boost::asio::ip::tcp::socket> &excludingUser, const std::string &message)
-{
-    for (const auto &userSocket : userSockets_)
+    if (message.size() < 5)
     {
-        if (userSocket != excludingUser)
-        {
-            boost::asio::async_write(
-                *userSocket,
-                boost::asio::buffer(message),
-                [](const boost::system::error_code &, std::size_t) {});
-        }
+        return MessageType::UNKNOWN;
+    }
+    std::string sub = message.substr(0, 5);
+    if (sub == "[CMD]")
+    {
+        return MessageType::CMD;
+    }
+    else if (sub == "[MSG]")
+    {
+        return MessageType::MSG;
+    }
+    else
+    {
+        return MessageType::UNKNOWN;
     }
 }
 
+void ProxyServer::handleCommunication(const std::shared_ptr<boost::asio::ip::tcp::socket>& newUserSocket)
+{
+    boost::asio::async_read_until(
+        *newUserSocket, receiveBuffer_, '\n',
+        [this, newUserSocket](const boost::system::error_code& error, std::size_t bytes_received) {
+            if (!error && bytes_received > 0)
+            {
+                std::istream is(&receiveBuffer_);
+                std::string message;
+                std::getline(is, message);
+
+                std::cout << "Received from User:\n" << message << std::endl;
+
+
+                MessageType messageType = getMessageType(message);
+                switch (messageType)
+                {
+                case MessageType::CMD:
+                    commandHandler_->handleCommand(newUserSocket, message); // Use -> instead of .
+                    break;
+                case MessageType::MSG:
+                    handleMessage(newUserSocket, message);
+                    break;
+                case MessageType::UNKNOWN:
+                    std::cout << "Invalid message format: " << message << std::endl;
+                    break;
+                }
+                // Continue reading messages
+                handleCommunication(newUserSocket);
+            }
+            else
+            {
+                std::cout << "Error or no bytes received in handleCommunication.\n";
+
+                // Handle disconnection or error
+                userSockets_.erase(
+                    std::remove(userSockets_.begin(), userSockets_.end(), newUserSocket),
+                    userSockets_.end());
+
+                // Notify all users about the disconnection
+                notifyAllUsers("User disconnected.\n", {newUserSocket});
+            }
+        });
+}
+
+void ProxyServer::handleMessage(const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocket, const std::string& message)
+{
+    std::string mes = message.substr(5, message.size() - 6);
+    notifyAllUsers(mes + "\n", {userSocket});
+}

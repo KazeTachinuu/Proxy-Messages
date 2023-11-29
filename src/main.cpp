@@ -1,8 +1,8 @@
-// main.cpp
 #include <iostream>
 #include <boost/program_options.hpp>
 #include "BasicUser.hpp"
 #include "ProxyServer.hpp"
+#include "CommandHandler.hpp"
 
 namespace po = boost::program_options;
 
@@ -42,6 +42,8 @@ int main(int argc, char *argv[])
             try
             {
                 user.start();
+
+
             }
             catch (const boost::system::system_error &e)
             {
