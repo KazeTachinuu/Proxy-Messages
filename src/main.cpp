@@ -4,6 +4,8 @@
 #include "BasicUser.hpp"
 #include "ProxyServer.hpp"
 #include "CommandHandler.hpp"
+#include <boost/bind/bind.hpp>
+
 
 namespace po = boost::program_options;
 

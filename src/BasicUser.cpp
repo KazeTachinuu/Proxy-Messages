@@ -45,7 +45,7 @@ void BasicUser::handleRead(const boost::system::error_code& error, std::size_t b
         std::string message;
         std::getline(is, message);
 
-        std::cout << "Server:\n" << message << std::endl;
+        std::cout << "Server: " << message << std::endl;
 
         // Handle responses for various commands
         handleCommandResponse(message);

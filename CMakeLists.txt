@@ -1,27 +1,38 @@
 cmake_minimum_required(VERSION 3.12)
-project(main)
 
+project(YourProjectName)
+
+# Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 
+# Locate Boost libraries
+find_package(Boost REQUIRED COMPONENTS program_options system thread)
 
-# Find Boost
-find_package(Boost COMPONENTS program_options system)
+# Include directories
+include_directories(include ${Boost_INCLUDE_DIRS})
 
-# Include Boost headers
-include_directories(${Boost_INCLUDE_DIRS})
-
-# Source files
-set(SRC_DIR src)
-set(SRC_FILES
-    ${SRC_DIR}/BasicUser.cpp
-    ${SRC_DIR}/ProxyServer.cpp
-    ${SRC_DIR}/main.cpp
-        ${SRC_DIR}/CommandHandler.cpp
+# Add your source files and headers
+set(SOURCES
+        src/BasicUser.cpp
+        src/ProxyServer.cpp
+        src/CommandHandler.cpp
+        # Add other source files as needed
 )
 
-# Create an executable in the build directory
-add_executable(main ${SRC_FILES})
+set(HEADERS
+        include/BasicUser.hpp
+        include/ProxyServer.hpp
+        include/CommandHandler.hpp
+        # Add other header files as needed
+)
 
-# Link Boost libraries
+# Build executable
+add_executable(main src/main.cpp ${SOURCES} ${HEADERS})
+
+# Link against Boost libraries
 target_link_libraries(main ${Boost_LIBRARIES})
+
+add_executable(test_case_1 tests/test_case_1.cpp src/BasicUser.cpp include/BasicUser.hpp)
+target_link_libraries(test_case_1 ${Boost_LIBRARIES})
+
 
