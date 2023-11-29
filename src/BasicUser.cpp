@@ -7,8 +7,10 @@ namespace asio = boost::asio;
 
 BasicUser::BasicUser()
     : socket_(io_context_),
-    disconnectTimer_(io_context_)
+    disconnectTimer_(io_context_),
+    waitingTime_(30)
 {
+
 }
 
 void BasicUser::start()
@@ -83,7 +85,7 @@ void BasicUser::handleUserCountResponse(int numConnectedUsers)
 {
     if (numConnectedUsers == 1)
     {
-        std::cout << "You are alone. Waiting for 30 sec.\n";
+        std::cout << "You are alone. Waiting for " << waitingTime_ << " sec.\n";
         startDisconnectTimer();
     }
     else
@@ -95,12 +97,12 @@ void BasicUser::handleUserCountResponse(int numConnectedUsers)
 
 void BasicUser::startDisconnectTimer()
 {
-    disconnectTimer_.expires_from_now(boost::posix_time::seconds(30));
+    disconnectTimer_.expires_from_now(boost::posix_time::seconds(waitingTime_));
     disconnectTimer_.async_wait(
         [this](const boost::system::error_code& error) {
             if (!error)
             {
-                std::cout << "No one else connected within 30 seconds. Disconnecting.\n";
+                std::cout << "No one else connected within " << waitingTime_ << " seconds. Disconnecting.\n";
                 socket_.close();
                 io_context_.stop();
             }

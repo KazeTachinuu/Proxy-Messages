@@ -142,6 +142,19 @@ test_case_1/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_1.dir/build.make CMakeFiles/test_case_1.dir/build
 .PHONY : test_case_1/fast
 
+#=============================================================================
+# Target rules for targets named test_case_2
+
+# Build rule for target.
+test_case_2: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_case_2
+.PHONY : test_case_2
+
+# fast build rule for target.
+test_case_2/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_2.dir/build.make CMakeFiles/test_case_2.dir/build
+.PHONY : test_case_2/fast
+
 src/BasicUser.o: src/BasicUser.cpp.o
 .PHONY : src/BasicUser.o
 
@@ -149,6 +162,7 @@ src/BasicUser.o: src/BasicUser.cpp.o
 src/BasicUser.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/BasicUser.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_1.dir/build.make CMakeFiles/test_case_1.dir/src/BasicUser.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_2.dir/build.make CMakeFiles/test_case_2.dir/src/BasicUser.cpp.o
 .PHONY : src/BasicUser.cpp.o
 
 src/BasicUser.i: src/BasicUser.cpp.i
@@ -158,6 +172,7 @@ src/BasicUser.i: src/BasicUser.cpp.i
 src/BasicUser.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/BasicUser.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_1.dir/build.make CMakeFiles/test_case_1.dir/src/BasicUser.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_2.dir/build.make CMakeFiles/test_case_2.dir/src/BasicUser.cpp.i
 .PHONY : src/BasicUser.cpp.i
 
 src/BasicUser.s: src/BasicUser.cpp.s
@@ -167,6 +182,7 @@ src/BasicUser.s: src/BasicUser.cpp.s
 src/BasicUser.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/BasicUser.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_1.dir/build.make CMakeFiles/test_case_1.dir/src/BasicUser.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_2.dir/build.make CMakeFiles/test_case_2.dir/src/BasicUser.cpp.s
 .PHONY : src/BasicUser.cpp.s
 
 src/CommandHandler.o: src/CommandHandler.cpp.o
@@ -175,6 +191,8 @@ src/CommandHandler.o: src/CommandHandler.cpp.o
 # target to build an object file
 src/CommandHandler.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/CommandHandler.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_1.dir/build.make CMakeFiles/test_case_1.dir/src/CommandHandler.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_2.dir/build.make CMakeFiles/test_case_2.dir/src/CommandHandler.cpp.o
 .PHONY : src/CommandHandler.cpp.o
 
 src/CommandHandler.i: src/CommandHandler.cpp.i
@@ -183,6 +201,8 @@ src/CommandHandler.i: src/CommandHandler.cpp.i
 # target to preprocess a source file
 src/CommandHandler.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/CommandHandler.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_1.dir/build.make CMakeFiles/test_case_1.dir/src/CommandHandler.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_2.dir/build.make CMakeFiles/test_case_2.dir/src/CommandHandler.cpp.i
 .PHONY : src/CommandHandler.cpp.i
 
 src/CommandHandler.s: src/CommandHandler.cpp.s
@@ -191,6 +211,8 @@ src/CommandHandler.s: src/CommandHandler.cpp.s
 # target to generate assembly for a file
 src/CommandHandler.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/CommandHandler.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_1.dir/build.make CMakeFiles/test_case_1.dir/src/CommandHandler.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_2.dir/build.make CMakeFiles/test_case_2.dir/src/CommandHandler.cpp.s
 .PHONY : src/CommandHandler.cpp.s
 
 src/ProxyServer.o: src/ProxyServer.cpp.o
@@ -199,6 +221,8 @@ src/ProxyServer.o: src/ProxyServer.cpp.o
 # target to build an object file
 src/ProxyServer.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/ProxyServer.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_1.dir/build.make CMakeFiles/test_case_1.dir/src/ProxyServer.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_2.dir/build.make CMakeFiles/test_case_2.dir/src/ProxyServer.cpp.o
 .PHONY : src/ProxyServer.cpp.o
 
 src/ProxyServer.i: src/ProxyServer.cpp.i
@@ -207,6 +231,8 @@ src/ProxyServer.i: src/ProxyServer.cpp.i
 # target to preprocess a source file
 src/ProxyServer.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/ProxyServer.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_1.dir/build.make CMakeFiles/test_case_1.dir/src/ProxyServer.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_2.dir/build.make CMakeFiles/test_case_2.dir/src/ProxyServer.cpp.i
 .PHONY : src/ProxyServer.cpp.i
 
 src/ProxyServer.s: src/ProxyServer.cpp.s
@@ -215,6 +241,8 @@ src/ProxyServer.s: src/ProxyServer.cpp.s
 # target to generate assembly for a file
 src/ProxyServer.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/src/ProxyServer.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_1.dir/build.make CMakeFiles/test_case_1.dir/src/ProxyServer.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_2.dir/build.make CMakeFiles/test_case_2.dir/src/ProxyServer.cpp.s
 .PHONY : src/ProxyServer.cpp.s
 
 src/main.o: src/main.cpp.o
@@ -265,6 +293,30 @@ tests/test_case_1.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_1.dir/build.make CMakeFiles/test_case_1.dir/tests/test_case_1.cpp.s
 .PHONY : tests/test_case_1.cpp.s
 
+tests/test_case_2.o: tests/test_case_2.cpp.o
+.PHONY : tests/test_case_2.o
+
+# target to build an object file
+tests/test_case_2.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_2.dir/build.make CMakeFiles/test_case_2.dir/tests/test_case_2.cpp.o
+.PHONY : tests/test_case_2.cpp.o
+
+tests/test_case_2.i: tests/test_case_2.cpp.i
+.PHONY : tests/test_case_2.i
+
+# target to preprocess a source file
+tests/test_case_2.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_2.dir/build.make CMakeFiles/test_case_2.dir/tests/test_case_2.cpp.i
+.PHONY : tests/test_case_2.cpp.i
+
+tests/test_case_2.s: tests/test_case_2.cpp.s
+.PHONY : tests/test_case_2.s
+
+# target to generate assembly for a file
+tests/test_case_2.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_case_2.dir/build.make CMakeFiles/test_case_2.dir/tests/test_case_2.cpp.s
+.PHONY : tests/test_case_2.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -275,6 +327,7 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... main"
 	@echo "... test_case_1"
+	@echo "... test_case_2"
 	@echo "... src/BasicUser.o"
 	@echo "... src/BasicUser.i"
 	@echo "... src/BasicUser.s"
@@ -290,6 +343,9 @@ help:
 	@echo "... tests/test_case_1.o"
 	@echo "... tests/test_case_1.i"
 	@echo "... tests/test_case_1.s"
+	@echo "... tests/test_case_2.o"
+	@echo "... tests/test_case_2.i"
+	@echo "... tests/test_case_2.s"
 .PHONY : help
 
 

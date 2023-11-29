@@ -1,8 +1,6 @@
 #include "ProxyServer.hpp"
 #include "CommandHandler.hpp"
 
-namespace asio = boost::asio;
-
 ProxyServer::ProxyServer(unsigned short port)
     : acceptor_(io_context_, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)),
     port_(port),
@@ -42,8 +40,14 @@ std::size_t ProxyServer::getUserCount() const
 
 void ProxyServer::notifyNewUser(const std::shared_ptr<asio::ip::tcp::socket>& newUserSocket)
 {
-    notifyUser(newUserSocket, "[INFO]NewUserConnected\n");
-    notifyAllUsers("New user connected.\n", {newUserSocket});
+    // Generate a unique username for the new user
+    std::string username = "User" + std::to_string(connectedUsers_.size() + 1);
+
+    // Store the username in the map
+    connectedUsers_[newUserSocket] = username;
+
+    notifyUser(newUserSocket, "[INFO]New user connected: " + username + "\n");
+    notifyAllUsers("New user connected: " + username + "\n", {newUserSocket});
 }
 
 void ProxyServer::startAccept()
@@ -107,16 +111,18 @@ void ProxyServer::handleCommunication(const std::shared_ptr<asio::ip::tcp::socke
                 std::string message;
                 std::getline(is, message);
 
-                std::cout << "Received from User:\n" << message << std::endl;
+                std::cout << "Received from User [" << connectedUsers_[newUserSocket] << "]:\n" << message << std::endl;
 
                 MessageType messageType = getMessageType(message);
                 switch (messageType)
                 {
                 case MessageType::CMD:
+                    // Update handleCommand to include the username
                     commandHandler_->handleCommand(newUserSocket, message);
                     break;
                 case MessageType::MSG:
-                    handleMessage(newUserSocket, message);
+                    // Update handleMessage to include the username
+                    handleMessage(newUserSocket, connectedUsers_[newUserSocket], message);
                     break;
                 case MessageType::UNKNOWN:
                     std::cout << "Invalid message format: " << message << std::endl;
@@ -127,17 +133,17 @@ void ProxyServer::handleCommunication(const std::shared_ptr<asio::ip::tcp::socke
             }
             else
             {
-                std::cout << "User disconnected.\n";
+                std::cout << "User [" << connectedUsers_[newUserSocket] << "] disconnected.\n";
                 userSockets_.erase(
                     std::remove(userSockets_.begin(), userSockets_.end(), newUserSocket),
                     userSockets_.end());
-                notifyAllUsers("User disconnected.\n", {newUserSocket});
+                notifyAllUsers("User [" + connectedUsers_[newUserSocket] + "] disconnected.\n", {newUserSocket});
             }
         });
 }
 
-void ProxyServer::handleMessage(const std::shared_ptr<asio::ip::tcp::socket>& userSocket, const std::string& message)
+void ProxyServer::handleMessage(const std::shared_ptr<asio::ip::tcp::socket>& userSocket, const std::string& username, const std::string& message)
 {
-    std::string mes = message.substr(5, message.size() - 6);
-    notifyAllUsers(mes + "\n", {userSocket});
+    auto colonPos = message.find(']');
+    notifyAllUsers("[" + username + "]" + message.substr(colonPos + 1) + "\n", {userSocket});
 }

@@ -13,6 +13,8 @@ public:
     BasicUser();
 
     void start();
+    void sendMessage(const std::string& message);
+
 
 private:
     void startRead();
@@ -22,11 +24,13 @@ private:
     void handleUserCountResponse(int numConnectedUsers);
     void startDisconnectTimer();
     void stopDisconnectTimer();
-    void sendMessage(const std::string& message);
+
 
     asio::io_context io_context_;
     asio::ip::tcp::socket socket_;
     asio::streambuf receiveBuffer_;
+    unsigned short waitingTime_;
     asio::deadline_timer disconnectTimer_;
+
 };
 
