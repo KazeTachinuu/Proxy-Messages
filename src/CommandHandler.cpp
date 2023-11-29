@@ -6,7 +6,7 @@ CommandHandler::CommandHandler(ProxyServer& proxyServer)
     : proxyServer_(proxyServer)
 {
     // Register command handlers
-    registerCommand("GetUserConnected", std::bind(&CommandHandler::handleGetUserConnected, this, std::placeholders::_1, std::placeholders::_2));
+    registerCommand("GetUserCount", std::bind(&CommandHandler::handleGetUserConnected, this, std::placeholders::_1, std::placeholders::_2));
     registerCommand("EchoReply", std::bind(&CommandHandler::handleEchoReply, this, std::placeholders::_1, std::placeholders::_2));
     // Add more command handlers as needed
 }
@@ -19,7 +19,7 @@ void CommandHandler::registerCommand(const std::string& command, CommandFunction
 void CommandHandler::handleCommand(const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocket, const std::string& command)
 {
     // Extract the command payload
-    std::string payload = command.substr(5, command.size() - 6);
+    std::string payload = command.substr(5, command.size() - 5);
 
     // Find the command handler in the map
     auto it = commandHandlers_.find(payload);
@@ -37,7 +37,7 @@ void CommandHandler::handleCommand(const std::shared_ptr<boost::asio::ip::tcp::s
 void CommandHandler::handleGetUserConnected(const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocket, const std::string& command)
 {
     // Handle the "GetUserConnected" command
-    proxyServer_.notifyUser(userSocket, "[CMD]ConnectedUsers: " + std::to_string(proxyServer_.getUserCount()) + "\n");
+    proxyServer_.notifyUser(userSocket, "[INFO]UserCount: " + std::to_string(proxyServer_.getUserCount()) + "\n");
 }
 
 void CommandHandler::handleEchoReply(const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocket, const std::string& command)

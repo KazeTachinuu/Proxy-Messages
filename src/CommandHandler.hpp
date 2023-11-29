@@ -1,5 +1,4 @@
-#ifndef COMMAND_HANDLER_HPP
-#define COMMAND_HANDLER_HPP
+#pragma once
 
 #include <string>
 #include <functional>
@@ -28,4 +27,4 @@ private:
     std::unordered_map<std::string, CommandFunction> commandHandlers_;
 };
 
-#endif // COMMAND_HANDLER_HPP
+

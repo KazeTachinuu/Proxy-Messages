@@ -1,9 +1,11 @@
-#ifndef BASIC_USER_HPP
-#define BASIC_USER_HPP
+#pragma once
 
 #include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <iostream>
-#include <thread>
+
+namespace asio = boost::asio;
 
 class BasicUser
 {
@@ -14,13 +16,17 @@ public:
 
 private:
     void startRead();
-    void sendMessage(const std::string& message);
+    void handleRead(const boost::system::error_code& error, std::size_t bytes_received);
+    void handleCommandResponse(const std::string& message);
+    void handleGetUserConnectedResponse(const std::string& message);
+    void handleUserCountResponse(int numConnectedUsers);
     void startDisconnectTimer();
+    void stopDisconnectTimer();
+    void sendMessage(const std::string& message);
 
-    boost::asio::io_context io_context_;
-    boost::asio::ip::tcp::socket socket_;
-    boost::asio::deadline_timer disconnectTimer_;
-    boost::asio::streambuf receiveBuffer_;
+    asio::io_context io_context_;
+    asio::ip::tcp::socket socket_;
+    asio::streambuf receiveBuffer_;
+    asio::deadline_timer disconnectTimer_;
 };
 
-#endif // BASIC_USER_HPP
