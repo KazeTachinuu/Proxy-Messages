@@ -12,15 +12,12 @@ public:
 
     void start();
 
-    // Function to asynchronously receive messages
-    void asyncReceive();
-
 private:
+    void startRead();
+
     boost::asio::io_context io_context_;
     boost::asio::ip::tcp::socket socket_;
-
-    // Buffer to store received messages
-    std::array<char, 1024> receiveBuffer_;
+    boost::asio::streambuf receiveBuffer_;
 };
 
 #endif // BASIC_USER_HPP

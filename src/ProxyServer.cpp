@@ -2,6 +2,7 @@
 
 #include "ProxyServer.hpp"
 #include <iostream>
+#include <map>
 
 ProxyServer::ProxyServer(unsigned short port)
     : acceptor_(io_context_, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
@@ -23,29 +24,23 @@ void ProxyServer::startAccept()
         [this](const boost::system::error_code &error, boost::asio::ip::tcp::socket userSocket) {
             if (!error)
             {
-                std::cout << "Proxy Server: User connected.\n";
-
-                // If there's a waiting user, notify the waiting user about the new connection
-                if (waitingUser_)
-                {
-                    notifyUser(waitingUser_, "Another user has connected.\n");
-                    waitingTimer_.cancel();
-                }
+                auto newUserSocket = std::make_shared<boost::asio::ip::tcp::socket>(std::move(userSocket));
+                std::cout << "Proxy Server: User " + std::to_string(userSockets_.size()+1) + " connected.\n";
+                notifyUser(newUserSocket,"User " + std::to_string(userSockets_.size()+1) + " connected.\n");
 
                 // Store the connected user socket
-                auto newUserSocket = std::make_shared<boost::asio::ip::tcp::socket>(std::move(userSocket));
                 userSockets_.push_back(newUserSocket);
 
                 // Notify the connected user about the existing users
                 if (userSockets_.size() > 1)
                 {
-                    notifyUser(newUserSocket, "Other users are already connected.\n");
+                    // Notify the new user about the existing users
+                    notifyUser(newUserSocket, std::to_string(userSockets_.size()-1)+" users are already connected.\n");
 
-                    // If there are two users connected, handle bidirectional communication
-                    if (userSockets_.size() == 2)
-                    {
-                        handleConnectedUsers(userSockets_[0], userSockets_[1]);
-                    }
+                    // Add the new user to the user map
+                    userMap_[newUserSocket] = userSockets_.size();
+
+                    notifyAllUsers(newUserSocket,"User " + std::to_string(userMap_[newUserSocket]) + " has connected.\n");
                 }
                 else
                 {
@@ -82,41 +77,25 @@ void ProxyServer::startAccept()
         });
 }
 
-void ProxyServer::notifyUser(const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocket, const std::string& message)
+void ProxyServer::notifyUser(const std::shared_ptr<boost::asio::ip::tcp::socket> &userSocket, const std::string &message)
 {
     boost::asio::async_write(
         *userSocket, boost::asio::buffer(message),
         [](const boost::system::error_code &, std::size_t) {});
 }
 
-void ProxyServer::handleConnectedUsers(const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocketA,
-                                       const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocketB)
+
+void ProxyServer::notifyAllUsers(const std::shared_ptr<boost::asio::ip::tcp::socket> &excludingUser, const std::string &message)
 {
-    // Inform user A that it has been connected to user B
-    notifyUser(userSocketA, "You are now connected to User B.\n");
-
-    // Inform user B that it has been connected to user A
-    notifyUser(userSocketB, "You are now connected to User A.\n");
-
-    // Notify user B with "[CMD]ECHOREPLY snowpack" from user A
-    handleUserMessage("User A", userSocketA, "User B", userSocketB, "[CMD]ECHOREPLY snowpack\n");
-    handleUserMessage("User B", userSocketB, "User A", userSocketA, "snowpack\n");
+    for (const auto &userSocket : userSockets_)
+    {
+        if (userSocket != excludingUser)
+        {
+            boost::asio::async_write(
+                *userSocket,
+                boost::asio::buffer(message),
+                [](const boost::system::error_code &, std::size_t) {});
+        }
+    }
 }
-
-void ProxyServer::handleUserMessage(const std::string& sender_name,
-                                    const std::shared_ptr<boost::asio::ip::tcp::socket>& sender,
-                                    const std::string& receiver_name,
-                                    const std::shared_ptr<boost::asio::ip::tcp::socket>& receiver,
-                                    const std::string& message)
-{
-    // Construct the complete message including sender's name
-    std::string completeMessage = sender_name + ": " + message;
-
-    std::cout << "Proxy Server: Relaying message from " << sender_name << " to " << receiver_name << ": " << message << std::endl;
-
-    // Notify the receiver with the complete message
-    notifyUser(receiver, completeMessage);
-
-}
-
 
