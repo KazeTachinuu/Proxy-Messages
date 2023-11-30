@@ -1,7 +1,8 @@
+#include <algorithm>
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS
-#include "BasicUser.hpp"
-
 #include <iostream>
+
+#include "BasicUser.hpp"
 
 namespace asio = boost::asio;
 
@@ -56,9 +57,14 @@ void BasicUser::handleRead(const boost::system::error_code &error,
 
 void BasicUser::handleCommandResponse(const std::string &message)
 {
-    if (message.find("[INFO]UserCount: ") == 0)
+    if (message.find("[INFO]UserCount") == 0)
     {
         std::cout << message << std::endl;
+    }
+    if (message.find("[CMD]ECHOREPLY") == 0)
+    {
+        size_t pos = message.find("ECHOREPLY");
+        std::cout << message.substr(pos + 11) << std::endl;
     }
 }
 
