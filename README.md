@@ -1,67 +1,74 @@
-# Snowpack Proxy Test
+# Snowpack Proxy Server
 
-Snowpack Proxy Test is a simple C++ project that demonstrates a basic proxy-server and user-client communication using Boost.Asio. The project allows you to run either in "Proxy" mode or "User" mode.
+Snowpack Proxy Server is a simple proxy server implementation using Boost.Asio.
 
-## Prerequisites
+## Table of Contents
+- [Introduction](#introduction)
+- [Features](#features)
+- [Getting Started](#getting-started)
+- [Usage](#usage)
+- [Tests](#tests)
 
-Before you begin, ensure you have met the following requirements:
 
-- C++ compiler (g++)
-- Boost C++ Libraries installed
+## Introduction
 
-## Build and Run
+Snowpack Proxy Server is a lightweight proxy server built with Boost.Asio, designed to facilitate communication between multiple users. It allows users to connect and exchange messages through a central proxy, providing a basic foundation for distributed systems and communication testing.
 
-To build and run the project, follow these steps:
+## Features
 
-1. Clone the repository:
+- Basic proxy server functionality
+- Asynchronous communication using Boost.Asio
+- Command handling for managing user connections
 
-    ```bash
-    git clone https://github.com/KazeTachinuu/Snowpack-proxy-test.git
-    ```
+## Getting Started
 
-2. Change into the project directory:
+To get started with the Snowpack Proxy Server, follow these steps:
 
-    ```bash
-    cd Snowpack-proxy-test
-    ```
-
-3. Build the project:
-
-    ```bash
-    mkdir build
-    cd build
-    cmake ..
-    make -j4
-    ```
-
-4. Run the Proxy or User:
-
-    - Proxy Mode:
-
-        ```bash
-        ./main --mode=Proxy
-        ```
-
-    - User Mode:
-
-        ```bash
-        ./main --mode=User
-        ```
+1. Clone the repository: `git clone https://github.com/KazeTachinuu/Snowpack-proxy-test.git`
+2. Navigate to the project directory: `cd Snowpack-Proxy-Server`
+3. Build the project using CMake: `mkdir build && cd build && cmake .. && make main`
+4. Run the proxy server: `./main --mode Proxy`
 
 ## Usage
 
-- Proxy Mode: Launches the proxy server on port 12345.
+Once the Snowpack Proxy Server is running, users can connect to it using a TCP client. The server handles user connections and facilitates communication between them.
 
-- User Mode: Initiates a basic user that connects to the proxy server. Ensure the proxy server is running before starting the user.
+Example usage:
 
-## Options
+1. Start the proxy server: `./main --mode Proxy`
+2. Connect users to the server using TCP clients: `./main --mode User`
+3. Exchange messages between connected users through the proxy.
 
-- `--mode`: Specify the mode as "Proxy" or "User".
+## Tests
 
-## Error Handling
+### Test Case 1: Manage absence of correspondent
+- P is waiting for incoming connection
+- A connects to P, P confirms that the connection is ok but that there is no other connected user, A is waiting up to 30 secs. After 30 secs, A disconnects from P because nobody has connected to the proxy.
 
-The project includes error handling for various scenarios, such as connection refusal and invalid options.
+To run Test Case 1, first run the proxy in a Terminal with :
+```shell
+./main --mode Proxy
+```
+Then run the test_case_1 executable and watch the magic
+```bash
+make test_case_1
+./test_case_1
+```
 
-If an error occurs, the application will provide informative error messages to guide you.
+### Test Case 2: Manage basic communication
+- P is waiting for incoming connection
+- A connects to P, P confirms that the connection is ok but that there is no other connected user, A is waiting up to 30 secs.
+- B connects to P before the remaining time of 30 secs. P informs B that he will be connected with the connected user A.
+- A is informed that it has been connected to B by P.
+- A sends a message “hello” to B relayed by P (P prints the message in its terminal before sending the message to B).
+- B prints the message in its terminal
 
-
+To run Test Case 2, first run the proxy in a Terminal with :
+```shell
+./main --mode Proxy
+```
+Then run the test_case_2 executable and watch the magic
+```bash
+make test_case_2
+./test_case_2
+```
