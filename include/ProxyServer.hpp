@@ -1,16 +1,11 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/streambuf.hpp>
-#include <iostream>
 #include <map>
+#include <memory>
 #include <vector>
 
 #include "CommandHandler.hpp"
-
-namespace asio = boost::asio;
 
 enum class MessageType
 {
@@ -18,7 +13,10 @@ enum class MessageType
     MSG,
     INFO,
     UNKNOWN
+
 };
+
+namespace asio = boost::asio;
 
 class ProxyServer
 {
@@ -29,9 +27,9 @@ public:
                     const std::string &message);
     void
     notifyAllUsers(const std::string &message,
-                   const std::vector<std::shared_ptr<asio::ip::tcp::socket>>
-                       &excludedSockets);
-    std::size_t getUserCount() const;
+                   const std::shared_ptr<asio::ip::tcp::socket> &excludedSocket,
+                   const std::string &channel);
+    std::size_t getUserCount(const std::string &channel);
 
 private:
     void
@@ -41,7 +39,8 @@ private:
     void handleCommunication(
         const std::shared_ptr<asio::ip::tcp::socket> &newUserSocket);
     void handleMessage(const std::shared_ptr<asio::ip::tcp::socket> &userSocket,
-                       const std::string &username, const std::string &message);
+                       const std::string &username, const std::string &message,
+                       const std::string &channel);
 
 private:
     asio::io_context io_context_;
@@ -52,4 +51,6 @@ private:
     std::vector<std::shared_ptr<asio::ip::tcp::socket>> userSockets_;
     asio::streambuf receiveBuffer_;
     std::unique_ptr<CommandHandler> commandHandler_;
+    std::map<std::string, std::vector<std::shared_ptr<asio::ip::tcp::socket>>>
+        channels_;
 };

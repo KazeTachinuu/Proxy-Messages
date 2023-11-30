@@ -6,10 +6,11 @@
 
 namespace asio = boost::asio;
 
-BasicUser::BasicUser()
+BasicUser::BasicUser(const std::string &channel)
     : socket_(io_context_)
     , disconnectTimer_(io_context_)
     , waitingTime_(30)
+    , channel_(channel)
 {}
 
 void BasicUser::start()

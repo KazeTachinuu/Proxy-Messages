@@ -1,12 +1,11 @@
 #include "ProxyServer.hpp"
-
-#include "CommandHandler.hpp"
+#include <iostream>
 
 ProxyServer::ProxyServer(unsigned short port)
-    : acceptor_(io_context_, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port))
-    , port_(port)
-    , commandHandler_(std::make_unique<CommandHandler>(*this))
-{}
+    : acceptor_(io_context_, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)),
+      port_(port), commandHandler_(std::make_unique<CommandHandler>(*this))
+{
+}
 
 void ProxyServer::start()
 {
@@ -15,50 +14,50 @@ void ProxyServer::start()
     io_context_.run();
 }
 
-void ProxyServer::notifyUser(
-    const std::shared_ptr<asio::ip::tcp::socket> &userSocket,
-    const std::string &message)
+void ProxyServer::notifyUser(const std::shared_ptr<asio::ip::tcp::socket>& userSocket,
+                             const std::string& message)
 {
-    asio::async_write(*userSocket, asio::buffer(message),
-                      [](const boost::system::error_code &, std::size_t) {});
+    asio::async_write(
+        *userSocket, asio::buffer(message),
+        [](const boost::system::error_code&, std::size_t) {});
 }
 
-void ProxyServer::notifyAllUsers(
-    const std::string &message,
-    const std::vector<std::shared_ptr<asio::ip::tcp::socket>> &excludedSockets)
+void ProxyServer::notifyAllUsers(const std::string& message,
+                                 const std::shared_ptr<asio::ip::tcp::socket>& excludedSocket,
+                                 const std::string& channel)
 {
-    for (const auto &userSocket : userSockets_)
+    for (const auto& userSocket : channels_[channel])
     {
-        if (std::find(excludedSockets.begin(), excludedSockets.end(),
-                      userSocket)
-            == excludedSockets.end())
+        if (userSocket != excludedSocket)
         {
             notifyUser(userSocket, message);
         }
     }
 }
 
-std::size_t ProxyServer::getUserCount() const
+std::size_t ProxyServer::getUserCount(const std::string& channel)
 {
-    return userSockets_.size();
+    return channels_.count(channel) ? channels_.at(channel).size() : 0;
 }
 
-void ProxyServer::notifyNewUser(
-    const std::shared_ptr<asio::ip::tcp::socket> &newUserSocket)
+void ProxyServer::notifyNewUser(const std::shared_ptr<asio::ip::tcp::socket>& newUserSocket)
 {
-    // Generate a unique username for the new user
     std::string username = "User" + std::to_string(connectedUsers_.size() + 1);
-
-    // Store the username in the map
     connectedUsers_[newUserSocket] = username;
 
-    notifyAllUsers("[INFO]New user connected: " + username + "\n",
-                   { newUserSocket });
+    // Generate a unique username for the new user
+    std::cout << "New user connected: " << username << std::endl;
+
+    // Store the username in the map
+    channels_["default"].push_back(newUserSocket);
+    connectedUsers_[newUserSocket] = username;
+
+    notifyAllUsers("[INFO]New user connected: " + username + "\n", newUserSocket, "default");
 }
 
 void ProxyServer::startAccept()
 {
-    acceptor_.async_accept([this](const boost::system::error_code &error,
+    acceptor_.async_accept([this](const boost::system::error_code& error,
                                   asio::ip::tcp::socket userSocket) {
         if (!error)
         {
@@ -74,7 +73,7 @@ void ProxyServer::startAccept()
     });
 }
 
-MessageType ProxyServer::getMessageType(const std::string &message)
+MessageType ProxyServer::getMessageType(const std::string& message)
 {
     if (message.size() < 6) // Assuming the minimum length of a message type is
                             // 6 characters, e.g., "[CMD]"
@@ -82,16 +81,12 @@ MessageType ProxyServer::getMessageType(const std::string &message)
         return MessageType::UNKNOWN;
     }
 
-    // Find the position of the first closing bracket (]) in the response
     auto closingBracketPos = message.find(']');
 
-    if (closingBracketPos != std::string::npos
-        && closingBracketPos < message.size() - 1)
+    if (closingBracketPos != std::string::npos && closingBracketPos < message.size() - 1)
     {
-        // Extract the message type
         std::string messageType = message.substr(1, closingBracketPos - 1);
 
-        // Map the message type to the corresponding enum value
         if (messageType == "CMD")
         {
             return MessageType::CMD;
@@ -109,63 +104,43 @@ MessageType ProxyServer::getMessageType(const std::string &message)
     return MessageType::UNKNOWN;
 }
 
-void ProxyServer::handleCommunication(
-    const std::shared_ptr<asio::ip::tcp::socket> &newUserSocket)
+void ProxyServer::handleCommunication(const std::shared_ptr<asio::ip::tcp::socket>& newUserSocket)
 {
     asio::async_read_until(
         *newUserSocket, receiveBuffer_, '\n',
-        [this, newUserSocket](const boost::system::error_code &error,
-                              std::size_t bytes_received) {
-            if (!error && bytes_received > 0)
+        [this, newUserSocket](const boost::system::error_code& error, std::size_t bytes_transferred) {
+            if (!error)
             {
-                std::istream is(&receiveBuffer_);
-                std::string message;
-                std::getline(is, message);
+                std::string message(asio::buffers_begin(receiveBuffer_.data()),
+                                    asio::buffers_begin(receiveBuffer_.data()) + bytes_transferred);
+                receiveBuffer_.consume(bytes_transferred);
 
-                std::cout << "Received from User ["
-                          << connectedUsers_[newUserSocket] << "]:\n"
-                          << message << std::endl;
+                auto messageType = getMessageType(message);
 
-                MessageType messageType = getMessageType(message);
                 switch (messageType)
                 {
                 case MessageType::CMD:
-
-                    commandHandler_->handleCommand(newUserSocket, message);
+                    commandHandler_->handleCommand(newUserSocket, message, "default");
                     break;
                 case MessageType::MSG:
-
-                    handleMessage(newUserSocket, connectedUsers_[newUserSocket],
-                                  message);
+                    handleMessage(newUserSocket, connectedUsers_[newUserSocket], message, "default");
                     break;
-                case MessageType::UNKNOWN:
-                    std::cout << "Invalid message format: " << message
-                              << std::endl;
+                case MessageType::INFO:
+                    notifyUser(newUserSocket, "[INFO]Message received.\n");
                     break;
+                default:
+                    std::cerr << "Unknown message type received.\n";
                 }
+            }
 
-                handleCommunication(newUserSocket);
-            }
-            else
-            {
-                std::cout << "User [" << connectedUsers_[newUserSocket]
-                          << "] disconnected.\n";
-                userSockets_.erase(std::remove(userSockets_.begin(),
-                                               userSockets_.end(),
-                                               newUserSocket),
-                                   userSockets_.end());
-                notifyAllUsers("User [" + connectedUsers_[newUserSocket]
-                                   + "] disconnected.\n",
-                               { newUserSocket });
-            }
+            handleCommunication(newUserSocket);
         });
 }
 
-void ProxyServer::handleMessage(
-    const std::shared_ptr<asio::ip::tcp::socket> &userSocket,
-    const std::string &username, const std::string &message)
+void ProxyServer::handleMessage(const std::shared_ptr<asio::ip::tcp::socket>& userSocket,
+                                const std::string& username, const std::string& message,
+                                const std::string& channel)
 {
-    auto colonPos = message.find(']');
-    notifyAllUsers("[" + username + "]" + message.substr(colonPos + 1) + "\n",
-                   { userSocket });
+    std::string formattedMessage = "[" + channel + "]" + username + ": " + message;
+    notifyAllUsers(formattedMessage, userSocket, channel);
 }

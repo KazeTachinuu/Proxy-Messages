@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
         }
 
         std::cout << "Test Case 3: Manage bidirectional communication\n";
-        BasicUser user;
+        BasicUser user("0");
 
         std::thread userThread([&]() { user.start(); });
         // Wait for user A to connect to the proxy

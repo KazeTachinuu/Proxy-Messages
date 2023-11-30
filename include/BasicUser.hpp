@@ -1,16 +1,16 @@
+// BasicUser.hpp
+
 #pragma once
 
 #include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <iostream>
+#include <boost/bind/bind.hpp>
 
 namespace asio = boost::asio;
 
 class BasicUser
 {
 public:
-    BasicUser();
+    BasicUser(const std::string &channel);
 
     void start();
     void sendMessage(const std::string &message);
@@ -25,9 +25,11 @@ private:
     void handleDisconnect();
     void startReadUntilUserCount();
 
+private:
     asio::io_context io_context_;
     asio::ip::tcp::socket socket_;
     asio::streambuf receiveBuffer_;
     unsigned short waitingTime_;
     asio::deadline_timer disconnectTimer_;
+    std::string channel_;
 };

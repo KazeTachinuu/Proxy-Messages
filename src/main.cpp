@@ -1,10 +1,8 @@
-#define BOOST_BIND_GLOBAL_PLACEHOLDERS
-#include <boost/bind/bind.hpp>
+// main.cpp
+
 #include <boost/program_options.hpp>
 #include <iostream>
-
 #include "BasicUser.hpp"
-#include "CommandHandler.hpp"
 #include "ProxyServer.hpp"
 
 namespace po = boost::program_options;
@@ -14,7 +12,8 @@ int main(int argc, char *argv[])
     po::options_description desc("Allowed options");
 
     desc.add_options()("mode", po::value<std::string>()->required(),
-                       "Mode Selection Proxy/User");
+                       "Mode Selection Proxy/User")("channel", po::value<std::string>()->default_value("default"),
+                                                    "Channel for communication (default is 'default')");
 
     po::variables_map vm;
 
@@ -31,6 +30,7 @@ int main(int argc, char *argv[])
     }
 
     std::string mode = vm["mode"].as<std::string>();
+    std::string channel = vm["channel"].as<std::string>();
 
     try
     {
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
         }
         else if (mode == "User")
         {
-            BasicUser user;
+            BasicUser user(channel);
             try
             {
                 user.start();

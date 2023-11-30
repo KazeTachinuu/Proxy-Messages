@@ -10,7 +10,7 @@ int main()
     try
     {
         // Create a BasicUser instance
-        BasicUser user;
+        BasicUser user("0");
 
         // Start the user
         std::cout << "Test Case 1: Manage absence of correspondent\n";

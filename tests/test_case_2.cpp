@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
             return 1;
         }
 
-        BasicUser user;
+        BasicUser user("0");
 
         std::thread userThread([&]() { user.start(); });
         // Wait for user A to connect to the proxy
