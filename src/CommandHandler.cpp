@@ -69,13 +69,17 @@ void CommandHandler::handleEchoReply(
     if (echoPos != std::string::npos)
     {
         // Extract the rest of the line after "ECHOREPLY"
-        std::string restOfLine = command.substr(echoPos + 10); // Assuming "ECHOREPLY" is 9 characters long + the space
+        std::string restOfLine = command.substr(
+            echoPos
+            + 10); // Assuming "ECHOREPLY" is 9 characters long + the space
 
         // Notify the user with the rest of the line
-        proxyServer_.notifyUser(userSocket, "[CMD]ECHOREPLY: " + restOfLine + "\n");
+        proxyServer_.notifyAllUsers("[CMD]ECHOREPLY: " + restOfLine + "\n",
+                                    { userSocket });
     }
     else
     {
-        std::cout << "Command 'ECHOREPLY' not found in the message: " << command << std::endl;
+        std::cout << "Command 'ECHOREPLY' not found in the message: " << command
+                  << std::endl;
     }
 }

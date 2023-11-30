@@ -64,7 +64,7 @@ void BasicUser::handleCommandResponse(const std::string &message)
     if (message.find("[CMD]ECHOREPLY") == 0)
     {
         size_t pos = message.find("ECHOREPLY");
-        std::cout << message.substr(pos + 11) << std::endl;
+        sendMessage("[MSG]" + message.substr(pos + 11));
     }
 }
 
