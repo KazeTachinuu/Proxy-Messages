@@ -33,13 +33,13 @@ add_executable(main src/main.cpp ${SOURCES} ${HEADERS})
 target_link_libraries(main ${Boost_LIBRARIES})
 
 # Build test executable in the test directory
-add_executable(test_case_1 tests/test_case_1.cpp ${SOURCES} ${HEADERS})
+add_executable(test_case_1 tests/test_case_1.cpp src/BasicUser.cpp include/BasicUser.hpp)
 target_link_libraries(test_case_1 ${Boost_LIBRARIES})
 
 # Define test
 add_test(NAME TestCase1 COMMAND test_case_1)
 
 # Optionally, you can add more tests similarly
- add_executable(test_case_2 tests/test_case_2.cpp ${SOURCES} ${HEADERS})
+ add_executable(test_case_2 tests/test_case_2.cpp src/BasicUser.cpp include/BasicUser.hpp)
  target_link_libraries(test_case_2 ${Boost_LIBRARIES})
  add_test(NAME TestCase2 COMMAND test_case_2)
