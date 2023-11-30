@@ -1,11 +1,11 @@
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS
-#include <iostream>
-#include <boost/program_options.hpp>
-#include "BasicUser.hpp"
-#include "ProxyServer.hpp"
-#include "CommandHandler.hpp"
 #include <boost/bind/bind.hpp>
+#include <boost/program_options.hpp>
+#include <iostream>
 
+#include "BasicUser.hpp"
+#include "CommandHandler.hpp"
+#include "ProxyServer.hpp"
 
 namespace po = boost::program_options;
 
@@ -45,14 +45,13 @@ int main(int argc, char *argv[])
             try
             {
                 user.start();
-
-
             }
             catch (const boost::system::system_error &e)
             {
                 if (e.code() == boost::asio::error::connection_refused)
                 {
-                    std::cerr << "ERROR: Connection refused. The proxy server may not be running yet.\n";
+                    std::cerr << "ERROR: Connection refused. The proxy server "
+                                 "may not be running yet.\n";
                 }
                 else
                 {
@@ -63,7 +62,8 @@ int main(int argc, char *argv[])
         }
         else
         {
-            throw po::validation_error(po::validation_error::invalid_option_value, "mode");
+            throw po::validation_error(
+                po::validation_error::invalid_option_value, "mode");
         }
     }
     catch (const po::validation_error &e)

@@ -1,12 +1,13 @@
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS
 #include <iostream>
-#include <thread> // Add necessary headers
+#include <thread>
 
 #include "BasicUser.hpp"
 
-int main() {
-    try {
-
+int main()
+{
+    try
+    {
         std::cout << "Test Case 2: Manage basic communication\n";
         // Create and start user A
         BasicUser userA;
@@ -22,13 +23,15 @@ int main() {
         // Wait for user B to connect to the proxy
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
-        // Perform the communication between A and B (you need to implement this part)
+        // Perform the communication between A and B
         userA.sendMessage("[MSG]hello");
 
         // Wait for the threads to finish
         userAThread.join();
         userBThread.join();
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         std::cerr << "ERROR: " << e.what() << "\n";
         return 1;
     }
