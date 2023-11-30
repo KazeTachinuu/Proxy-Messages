@@ -20,10 +20,10 @@ private:
     void startRead();
     void handleRead(const boost::system::error_code& error, std::size_t bytes_received);
     void handleCommandResponse(const std::string& message);
-    void handleGetUserConnectedResponse(const std::string& message);
-    void handleUserCountResponse(int numConnectedUsers);
     void startDisconnectTimer();
     void stopDisconnectTimer();
+    void handleDisconnect();
+    void startReadUntilUserCount();
 
 
     asio::io_context io_context_;

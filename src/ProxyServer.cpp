@@ -46,8 +46,7 @@ void ProxyServer::notifyNewUser(const std::shared_ptr<asio::ip::tcp::socket>& ne
     // Store the username in the map
     connectedUsers_[newUserSocket] = username;
 
-    notifyUser(newUserSocket, "[INFO]New user connected: " + username + "\n");
-    notifyAllUsers("New user connected: " + username + "\n", {newUserSocket});
+    notifyAllUsers("[INFO]New user connected: " + username + "\n", {newUserSocket});
 }
 
 void ProxyServer::startAccept()

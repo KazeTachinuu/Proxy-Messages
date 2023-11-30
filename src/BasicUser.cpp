@@ -21,10 +21,10 @@ void BasicUser::start()
 
     asio::connect(socket_, endpoint_iterator);
 
-    // Start reading messages from the server
-    startRead();
+    handleDisconnect();
 
-    sendMessage("[CMD]GetUserCount");
+
+
 
     // Run the IO context
     io_context_.run();
@@ -61,39 +61,11 @@ void BasicUser::handleCommandResponse(const std::string& message)
 {
     if (message.find("[INFO]UserCount: ") == 0)
     {
-        handleGetUserConnectedResponse(message);
+        std::cout << message <<std::endl;
     }
     // Add more command response handlers as needed
 }
 
-void BasicUser::handleGetUserConnectedResponse(const std::string& message)
-{
-    auto colonPos = message.find(':');
-
-    if (colonPos != std::string::npos)
-    {
-        int numConnectedUsers = std::stoi(message.substr(colonPos + 1));
-        handleUserCountResponse(numConnectedUsers);
-    }
-    else
-    {
-        std::cout << "Invalid response format: " << message << std::endl;
-    }
-}
-
-void BasicUser::handleUserCountResponse(int numConnectedUsers)
-{
-    if (numConnectedUsers == 1)
-    {
-        std::cout << "You are alone. Waiting for " << waitingTime_ << " sec.\n";
-        startDisconnectTimer();
-    }
-    else
-    {
-        std::cout << "Other users are connected. Stopping disconnect timer.\n";
-        stopDisconnectTimer();
-    }
-}
 
 void BasicUser::startDisconnectTimer()
 {
@@ -113,6 +85,57 @@ void BasicUser::stopDisconnectTimer()
 {
     disconnectTimer_.cancel();
 }
+
+void BasicUser::handleDisconnect()
+{
+    sendMessage("[CMD]GetUserCount");
+    startReadUntilUserCount();
+}
+
+void BasicUser::startReadUntilUserCount()
+{
+    asio::async_read_until(
+        socket_, receiveBuffer_, '\n',
+        [this](const boost::system::error_code &error, std::size_t bytes_received) {
+            if (!error && bytes_received > 0)
+            {
+                std::istream is(&receiveBuffer_);
+                std::string message;
+                std::getline(is, message);
+
+                std::cout << message << std::endl;
+
+                if (message.find("[INFO]UserCount: ") == 0)
+                {
+                    auto colonPos = message.find(':');
+                    int numConnectedUsers = std::stoi(message.substr(colonPos + 1));
+                    if (numConnectedUsers == 1)
+                    {
+                        std::cout << "You are alone. Waiting for " << waitingTime_ << " sec.\n";
+                        startDisconnectTimer();
+                        startReadUntilUserCount();
+                    }
+                    else
+                    {
+                        std::cout << "Other users are connected.\n";
+                        stopDisconnectTimer();
+                        startRead();
+                    }
+                }
+                else if (message.find("[INFO]New user connected:") == 0)
+                {
+                    std::cout << "Other users are connected. Stopping disconnect timer.\n";
+                    stopDisconnectTimer();
+                    startRead();
+                }
+                else
+                {
+                    startReadUntilUserCount();
+                }
+            }
+        });
+}
+
 
 void BasicUser::sendMessage(const std::string& message)
 {

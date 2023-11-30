@@ -7,7 +7,7 @@
 int main() {
     try {
 
-
+        std::cout << "Test Case 2: Manage basic communication\n";
         // Create and start user A
         BasicUser userA;
         std::thread userAThread([&]() { userA.start(); });
