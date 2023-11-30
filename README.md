@@ -25,7 +25,7 @@ Snowpack Proxy Server is a lightweight proxy server built with Boost.Asio, desig
 To get started with the Snowpack Proxy Server, follow these steps:
 
 1. Clone the repository: `git clone https://github.com/KazeTachinuu/Snowpack-proxy-test.git`
-2. Navigate to the project directory: `cd Snowpack-Proxy-Server`
+2. Navigate to the project directory: `cd Snowpack-proxy-test`
 3. Build the project using CMake: `mkdir build && cd build && cmake .. && make main`
 4. Run the proxy server: `./main --mode Proxy`
 
