@@ -43,3 +43,7 @@ add_test(NAME TestCase1 COMMAND test_case_1)
  add_executable(test_case_2 tests/test_case_2.cpp src/BasicUser.cpp include/BasicUser.hpp)
  target_link_libraries(test_case_2 ${Boost_LIBRARIES})
  add_test(NAME TestCase2 COMMAND test_case_2)
+
+# Build test executable in the test directory
+add_executable(test_case_3 tests/test_case_3.cpp src/BasicUser.cpp include/BasicUser.hpp)
+target_link_libraries(test_case_3 ${Boost_LIBRARIES})
