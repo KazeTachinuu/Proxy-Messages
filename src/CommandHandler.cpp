@@ -1,12 +1,14 @@
 #include "CommandHandler.hpp"
-#include "ProxyServer.hpp"
+
 #include <iostream>
 
-CommandHandler::CommandHandler(ProxyServer& proxyServer)
+#include "ProxyServer.hpp"
+
+CommandHandler::CommandHandler(ProxyServer &proxyServer)
     : proxyServer_(proxyServer)
 {
     // Register command handlers
-    registerCommand("GetUserCount",
+    registerCommand("GETUSERCOUNT",
                     std::bind(&CommandHandler::handleGetUserConnected, this,
                               std::placeholders::_1, std::placeholders::_2,
                               std::placeholders::_3));
@@ -17,21 +19,21 @@ CommandHandler::CommandHandler(ProxyServer& proxyServer)
     // Add more command handlers as needed
 }
 
-void CommandHandler::registerCommand(const std::string& command,
+void CommandHandler::registerCommand(const std::string &command,
                                      CommandFunction handler)
 {
     commandHandlers_[command] = handler;
 }
 
 void CommandHandler::handleCommand(
-    const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocket,
-    const std::string& command, const std::string& channel)
+    const std::shared_ptr<boost::asio::ip::tcp::socket> &userSocket,
+    const std::string &command, const std::string &channel)
 {
     bool commandHandled = false;
 
-    for (const auto& handler : commandHandlers_)
+    for (const auto &handler : commandHandlers_)
     {
-        const std::string& cmd = handler.first;
+        const std::string &cmd = handler.first;
         // Check if the command is present in the message
         size_t cmdPos = command.find(cmd);
         if (cmdPos != std::string::npos)
@@ -50,19 +52,19 @@ void CommandHandler::handleCommand(
 }
 
 void CommandHandler::handleGetUserConnected(
-    const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocket,
-    const std::string& command, const std::string& channel)
+    const std::shared_ptr<boost::asio::ip::tcp::socket> &userSocket,
+    const std::string &command, const std::string &channel)
 {
     // Handle the "GetUserConnected" command
+    std::size_t userCount = proxyServer_.getUserCount(channel);
     proxyServer_.notifyUser(userSocket,
-                            "[INFO]UserCount: " +
-                                std::to_string(proxyServer_.getUserCount(channel)) +
-                                "\n");
+                            "[INFO]UserCount: " + std::to_string(userCount)
+                                + " in channel " + channel + "\n");
 }
 
 void CommandHandler::handleEchoReply(
-    const std::shared_ptr<boost::asio::ip::tcp::socket>& userSocket,
-    const std::string& command, const std::string& channel)
+    const std::shared_ptr<boost::asio::ip::tcp::socket> &userSocket,
+    const std::string &command, const std::string &channel)
 {
     // Find the position of "ECHOREPLY"
     size_t echoPos = command.find("ECHOREPLY");
@@ -70,10 +72,10 @@ void CommandHandler::handleEchoReply(
     {
         // Extract the rest of the line after "ECHOREPLY"
         std::string restOfLine = command.substr(
-            echoPos +
-            10); // Assuming "ECHOREPLY" is 9 characters long + the space
+            echoPos
+            + 10); // Assuming "ECHOREPLY" is 9 characters long + the space
 
-        // Notify the user with the rest of the line
+        // Notify the user with the rest of the lin[e
         proxyServer_.notifyAllUsers("[CMD]ECHOREPLY: " + restOfLine + "\n",
                                     userSocket, channel);
     }

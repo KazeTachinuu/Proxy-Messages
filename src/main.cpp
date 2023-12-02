@@ -1,7 +1,6 @@
-// main.cpp
-
 #include <boost/program_options.hpp>
 #include <iostream>
+
 #include "BasicUser.hpp"
 #include "ProxyServer.hpp"
 
@@ -12,8 +11,9 @@ int main(int argc, char *argv[])
     po::options_description desc("Allowed options");
 
     desc.add_options()("mode", po::value<std::string>()->required(),
-                       "Mode Selection Proxy/User")("channel", po::value<std::string>()->default_value("default"),
-                                                    "Channel for communication (default is 'default')");
+                       "Mode Selection Proxy/User")(
+        "channel", po::value<std::string>()->default_value("0"),
+        "Channel for communication (default is '0')");
 
     po::variables_map vm;
 

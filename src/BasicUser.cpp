@@ -1,10 +1,11 @@
-#include <algorithm>
-#define BOOST_BIND_GLOBAL_PLACEHOLDERS
-#include <iostream>
-
 #include "BasicUser.hpp"
 
-namespace asio = boost::asio;
+#include <future>
+
+const std::string BasicUser::MSG_PREFIX = "[MSG]";
+const std::string BasicUser::CMD_PREFIX = "[CMD]";
+const std::string BasicUser::INFO_PREFIX = "[INFO]";
+const std::string BasicUser::NEWLINE = "\n";
 
 BasicUser::BasicUser(const std::string &channel)
     : socket_(io_context_)
@@ -15,88 +16,37 @@ BasicUser::BasicUser(const std::string &channel)
 
 void BasicUser::start()
 {
-    asio::ip::tcp::resolver resolver(io_context_);
-    asio::ip::tcp::resolver::query query("127.0.0.1", "12345");
-    asio::ip::tcp::resolver::iterator endpoint_iterator =
-        resolver.resolve(query);
+    auto disconnectFuture = disconnectPromise_.get_future();
 
-    asio::connect(socket_, endpoint_iterator);
-
+    connectToServer();
     handleDisconnect();
 
-    // Run the IO context
-    io_context_.run();
-}
+    // Start reading input in a separate thread
+    std::thread inputThread([this, &disconnectFuture]() {
+        // Wait for handleDisconnect to complete
+        disconnectFuture.wait();
 
-void BasicUser::startRead()
-{
-    asio::async_read_until(socket_, receiveBuffer_, '\n',
-                           [this](const boost::system::error_code &error,
-                                  std::size_t bytes_received) {
-                               handleRead(error, bytes_received);
-                           });
-}
-
-void BasicUser::handleRead(const boost::system::error_code &error,
-                           std::size_t bytes_received)
-{
-    if (!error && bytes_received > 0)
-    {
-        std::istream is(&receiveBuffer_);
-        std::string message;
-        std::getline(is, message);
-
-        std::cout << "Server: " << message << std::endl;
-
-        // Handle responses for various commands
-        handleCommandResponse(message);
-
-        // Continue reading messages
-        startRead();
-    }
-}
-
-void BasicUser::handleCommandResponse(const std::string &message)
-{
-    if (message.find("[INFO]UserCount") == 0)
-    {
-        std::cout << message << std::endl;
-    }
-    if (message.find("[CMD]ECHOREPLY") == 0)
-    {
-        size_t pos = message.find("ECHOREPLY");
-        sendMessage("[MSG]" + message.substr(pos + 11));
-    }
-}
-
-void BasicUser::startDisconnectTimer()
-{
-    disconnectTimer_.expires_from_now(boost::posix_time::seconds(waitingTime_));
-    disconnectTimer_.async_wait([this](const boost::system::error_code &error) {
-        if (!error)
-        {
-            std::cout << "No one else connected within " << waitingTime_
-                      << " seconds. Disconnecting.\n";
-            socket_.close();
-            io_context_.stop();
-        }
+        std::cout << "Enter messages to send to the server. Type 'exit' to "
+                     "quit.\n";
+        readUserInput();
     });
+
+    io_context_.run();
+
+    // Wait for the input thread to finish
+    inputThread.join();
 }
 
-void BasicUser::stopDisconnectTimer()
-{
-    disconnectTimer_.cancel();
-}
 
 void BasicUser::handleDisconnect()
 {
-    sendMessage("[CMD]GetUserCount");
+    sendMessage(CMD_PREFIX + "GETUSERCOUNT");
     startReadUntilUserCount();
 }
 
 void BasicUser::startReadUntilUserCount()
 {
-    asio::async_read_until(
+    boost::asio::async_read_until(
         socket_, receiveBuffer_, '\n',
         [this](const boost::system::error_code &error,
                std::size_t bytes_received) {
@@ -108,31 +58,17 @@ void BasicUser::startReadUntilUserCount()
 
                 std::cout << message << std::endl;
 
-                if (message.find("[INFO]UserCount: ") == 0)
+                if (message.find(INFO_PREFIX + "UserCount: ") != std::string::npos)
                 {
-                    auto colonPos = message.find(':');
-                    int numConnectedUsers =
-                        std::stoi(message.substr(colonPos + 1));
-                    if (numConnectedUsers == 1)
-                    {
-                        std::cout << "You are alone. Waiting for "
-                                  << waitingTime_ << " sec.\n";
-                        startDisconnectTimer();
-                        startReadUntilUserCount();
-                    }
-                    else
-                    {
-                        std::cout << "Other users are connected.\n";
-                        stopDisconnectTimer();
-                        startRead();
-                    }
+                    handleUserCountMessage(message);
                 }
-                else if (message.find("[INFO]New user connected:") == 0)
+                else if (message.find(INFO_PREFIX + "New user connected:") != std::string::npos)
                 {
-                    std::cout << "Other users are connected. Stopping "
-                                 "disconnect timer.\n";
-                    stopDisconnectTimer();
-                    startRead();
+                    handleNewUserConnectedMessage();
+                }
+                else if (message.find(CMD_PREFIX + "SHUTDOWN") != std::string::npos)
+                {
+                    handleShutdownMessage();
                 }
                 else
                 {
@@ -142,7 +78,184 @@ void BasicUser::startReadUntilUserCount()
         });
 }
 
+void BasicUser::handleUserCountMessage(const std::string &message)
+{
+    auto colonPos = message.find(':');
+    int numConnectedUsers = std::stoi(message.substr(colonPos + 1));
+
+    if (numConnectedUsers == 1)
+    {
+        handleAloneUser();
+    }
+    else
+    {
+        handleOtherUsersConnected();
+    }
+}
+
+void BasicUser::handleNewUserConnectedMessage()
+{
+    std::cout << "Other users are connected. Stopping disconnect timer.\n";
+    stopDisconnectTimer();
+    disconnectPromise_.set_value();
+    startRead();
+}
+
+void BasicUser::handleShutdownMessage()
+{
+    std::cout << "Server is shutting down. Disconnecting.\n";
+    disconnectAndStop();
+}
+
+void BasicUser::handleAloneUser()
+{
+    std::cout << "You are alone. Waiting for " << waitingTime_ << " sec.\n";
+    startDisconnectTimer();
+    startReadUntilUserCount();
+}
+
+void BasicUser::handleOtherUsersConnected()
+{
+    std::cout << "Other users are connected.\n";
+    stopDisconnectTimer();
+    disconnectPromise_.set_value();
+    startRead();
+}
+
+void BasicUser::readUserInput()
+{
+    std::string userInput;
+    while (true)
+    {
+        // Read a line from the console
+        std::getline(std::cin, userInput);
+
+        // Check if the user wants to exit
+        if (userInput == "exit")
+        {
+            break;
+        }
+
+        // If no MSG or CMD prefix, add MSG
+        if (userInput.find(MSG_PREFIX) != 0 && userInput.find(CMD_PREFIX) != 0)
+        {
+            userInput = MSG_PREFIX + userInput;
+        }
+
+        // Send the user input as a message to the server
+        sendMessage(userInput);
+    }
+
+    // Stop the io_context when the input thread finishes
+    io_context_.stop();
+}
+
 void BasicUser::sendMessage(const std::string &message)
 {
-    asio::write(socket_, asio::buffer(message + "\n"));
+    boost::asio::write(socket_, boost::asio::buffer(message + NEWLINE));
 }
+
+void BasicUser::connectToServer()
+{
+    boost::asio::ip::tcp::resolver resolver(io_context_);
+    boost::asio::ip::tcp::resolver::query query("127.0.0.1", "12345");
+    boost::asio::ip::tcp::resolver::iterator endpoint_iterator =
+        resolver.resolve(query);
+
+    boost::asio::connect(socket_, endpoint_iterator);
+
+    sendMessage("[" + channel_ + "]");
+}
+
+void BasicUser::startRead()
+{
+    boost::asio::async_read_until(socket_, receiveBuffer_, '\n',
+                                  [this](const boost::system::error_code &error,
+                                         std::size_t bytes_received) {
+                                      handleRead(error, bytes_received);
+                                  });
+}
+
+void BasicUser::handleRead(const boost::system::error_code &error,
+                           std::size_t bytes_received)
+{
+    if (!error && bytes_received > 0)
+    {
+        std::istream is(&receiveBuffer_);
+        std::string message;
+        std::getline(is, message);
+
+        handleCommandResponse(message);
+
+        startRead();
+    }
+}
+
+void BasicUser::handleCommandResponse(const std::string &message)
+{
+    if (message.empty())
+    {
+        return;
+    }
+    if (message.find(INFO_PREFIX) != std::string::npos)
+    {
+        std::cout << message << std::endl;
+    }
+    else if (message.find(MSG_PREFIX) != std::string::npos)
+    {
+
+        // Extract username and message body
+        std::string username = message.substr(0, message.find(']')+1);
+        std::string messageBody = message.substr(message.find(MSG_PREFIX) + 5);
+        std::cout << username << ": " << messageBody << std::endl;
+
+    }
+    else if (message.find(CMD_PREFIX + "ECHOREPLY") != std::string::npos)
+    {
+        // Echo reply received from the server
+        std::cout << "Echo reply received: " << message << std::endl;
+        size_t pos = message.find("ECHOREPLY");
+        sendMessage(MSG_PREFIX + message.substr(pos + 11));
+    }
+    else if (message.find(CMD_PREFIX + "SHUTDOWN") != std::string::npos)
+    {
+        // Server is shutting down
+        std::cout << "Server is shutting down. Disconnecting.\n";
+        disconnectAndStop();
+    }
+    else
+    {
+        std::cout << "Unknown message: " << message << std::endl;
+
+    }
+}
+
+void BasicUser::startDisconnectTimer()
+{
+    disconnectTimer_.expires_from_now(boost::posix_time::seconds(waitingTime_));
+    disconnectTimer_.async_wait([this](const boost::system::error_code &error) {
+        if (!error)
+        {
+            std::cout << "No one else connected within " << waitingTime_
+                      << " seconds. Disconnecting.\n";
+            disconnectAndStop();
+        }
+    });
+}
+
+void BasicUser::stopDisconnectTimer()
+{
+    disconnectTimer_.cancel();
+}
+
+
+void BasicUser::disconnectAndStop()
+{
+    socket_.close();
+
+    io_context_.stop();
+
+    exit(0);
+
+}
+
