@@ -30,7 +30,11 @@ int main(int argc, char *argv[])
 
     po::options_description hidden("Info options");
     hidden.add_options()("version,V", "Print version information")(
-        "help,h", "Print help message");
+        "help,h", "Print help message")
+        ("port,p", po::value<std::string>()->default_value("12345"),
+         "Port to use for the proxy server.")
+        ("ip,i", po::value<std::string>()->default_value("127.0.0.1"),
+         "IP address to use for the proxy server.");
     po::variables_map vm;
 
     try
@@ -62,6 +66,8 @@ int main(int argc, char *argv[])
 
     std::string mode = vm["mode"].as<std::string>();
     std::string channel = vm["secret"].as<std::string>();
+    std::string port = vm["port"].as<std::string>();
+    std::string ip = vm["ip"].as<std::string>();
 
     try
     {
@@ -72,7 +78,7 @@ int main(int argc, char *argv[])
         }
         else if (mode == "User")
         {
-            BasicUser user(channel);
+            BasicUser user(ip, port, channel);
             user.start();
         }
         else

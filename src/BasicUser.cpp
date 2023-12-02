@@ -7,11 +7,13 @@ const std::string BasicUser::CMD_PREFIX = "[CMD]";
 const std::string BasicUser::INFO_PREFIX = "[INFO]";
 const std::string BasicUser::NEWLINE = "\n";
 
-BasicUser::BasicUser(const std::string &channel)
+BasicUser::BasicUser(const std::string ip, const std::string port,const std::string &channel)
     : socket_(io_context_)
     , disconnectTimer_(io_context_)
     , waitingTime_(30)
     , channel_(channel)
+    , ip_(ip)
+    , port_(port)
 {}
 
 void BasicUser::start()
@@ -45,7 +47,7 @@ void BasicUser::sendMessage(const std::string &message)
 void BasicUser::connectToServer()
 {
     boost::asio::ip::tcp::resolver resolver(io_context_);
-    boost::asio::ip::tcp::resolver::query query("127.0.0.1", "12345");
+    boost::asio::ip::tcp::resolver::query query(ip_, port_);
     boost::asio::ip::tcp::resolver::iterator endpoint_iterator =
         resolver.resolve(query);
 

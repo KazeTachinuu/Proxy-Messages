@@ -10,7 +10,8 @@
 class BasicUser
 {
 public:
-    BasicUser(const std::string &channel);
+    BasicUser(const std::string ip, const std::string port,
+              const std::string &channel);
 
     void start();
     void sendMessage(const std::string &message);
@@ -28,6 +29,8 @@ private:
     std::promise<void> disconnectPromise_;
     int waitingTime_;
     std::string channel_;
+    std::string port_;
+    std::string ip_;
 
     void readUserInput();
 
