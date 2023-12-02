@@ -149,7 +149,6 @@ void BasicUser::readUserInput()
         // Read a line from the console
         std::getline(std::cin, userInput);
 
-
         if (userInput == "/help")
         {
             std::cout << "Commands:\n"
@@ -157,12 +156,18 @@ void BasicUser::readUserInput()
                          "/exit - Exit the program\n"
                          "/usercount - Get the number of users connected\n"
                          "/ping <message> - Send a message to the server and "
-                         "wait for an echo reply\n\n";
+                         "wait for an echo reply\n"
+                         "/list - List all users in the channel\n\n";
             continue;
         }
         else if (userInput == "/exit")
         {
             break;
+        }
+        else if (userInput == "/list")
+        {
+            sendMessage(CMD_PREFIX + "GETUSERLIST");
+            continue;
         }
         else if (userInput == "/usercount")
         {
@@ -182,7 +187,6 @@ void BasicUser::readUserInput()
             continue;
         }
 
-
         // If no MSG or CMD prefix, add MSG
         if (userInput.find(MSG_PREFIX) != 0 && userInput.find(CMD_PREFIX) != 0)
         {
@@ -196,7 +200,6 @@ void BasicUser::readUserInput()
     // Stop the io_context when the input thread finishes
     io_context_.stop();
 }
-
 
 void BasicUser::startRead()
 {
@@ -242,7 +245,8 @@ void BasicUser::handleCommandResponse(const std::string &message)
     else if (message.find(CMD_PREFIX + "ECHOREPLY") != std::string::npos)
     {
         // Echo reply received from the server
-        std::cout << "Echo reply received: " << message << std::endl << std::endl;
+        std::cout << "Echo reply received: " << message << std::endl
+                  << std::endl;
         size_t pos = message.find("ECHOREPLY");
         sendMessage(MSG_PREFIX + message.substr(pos + 11));
     }

@@ -16,7 +16,10 @@ CommandHandler::CommandHandler(ProxyServer &proxyServer)
                     std::bind(&CommandHandler::handleEchoReply, this,
                               std::placeholders::_1, std::placeholders::_2,
                               std::placeholders::_3));
-    // Add more command handlers as needed
+    registerCommand("GETUSERLIST",
+                    std::bind(&CommandHandler::handleGetUserList, this,
+                              std::placeholders::_1, std::placeholders::_2,
+                              std::placeholders::_3));
 }
 
 void CommandHandler::registerCommand(const std::string &command,
@@ -84,4 +87,13 @@ void CommandHandler::handleEchoReply(
         std::cout << "Command 'ECHOREPLY' not found in the message: " << command
                   << std::endl;
     }
+}
+
+void CommandHandler::handleGetUserList(
+    const std::shared_ptr<boost::asio::ip::tcp::socket> &userSocket,
+    const std::string &command, const std::string &channel)
+{
+    // Handle the "GetUserList" command
+    std::string userList = proxyServer_.getUserList(channel);
+    proxyServer_.notifyUser(userSocket, "[INFO]UserList: " + userList + "\n");
 }

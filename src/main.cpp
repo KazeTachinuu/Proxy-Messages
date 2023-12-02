@@ -6,9 +6,11 @@
 
 namespace po = boost::program_options;
 
-void printHelp(const po::options_description &desc, const po::options_description &hidden)
+void printHelp(const po::options_description &desc,
+               const po::options_description &hidden)
 {
-    std::cout << "Usage: ./main --mode User/Proxy --secret <secret>\n" << desc << std::endl;
+    std::cout << "Usage: ./main --mode User/Proxy --secret <secret>\n"
+              << desc << std::endl;
     std::cout << hidden << std::endl;
 }
 
@@ -20,16 +22,15 @@ void printVersion()
 int main(int argc, char *argv[])
 {
     po::options_description desc("Program options");
-    desc.add_options()
-        ("mode,m", po::value<std::string>()->default_value("Proxy"),
-        "Mode to run the program in. (Proxy/User)")
-        ("secret,s", po::value<std::string>()->default_value("0"),
+    desc.add_options()("mode,m",
+                       po::value<std::string>()->default_value("Proxy"),
+                       "Mode to run the program in. (Proxy/User)")(
+        "secret,s", po::value<std::string>()->default_value("0"),
         "Secret to use for the proxy server.");
 
     po::options_description hidden("Info options");
-    hidden.add_options()
-        ("version,V", "Print version information")
-        ("help,h", "Print help message");
+    hidden.add_options()("version,V", "Print version information")(
+        "help,h", "Print help message");
     po::variables_map vm;
 
     try
@@ -40,10 +41,7 @@ int main(int argc, char *argv[])
         po::store(po::parse_command_line(argc, argv, all_options), vm);
         po::notify(vm);
 
-
-
-
-        if (argc == 1 || vm.count("help") )
+        if (argc == 1 || vm.count("help"))
         {
             printHelp(desc, hidden);
             return 0;

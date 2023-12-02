@@ -33,7 +33,9 @@ private:
         const std::shared_ptr<boost::asio::ip::tcp::socket> &userSocket,
         const std::string &command, const std::string &channel);
 
-    // Add more command handlers as needed
+    void handleGetUserList(
+        const std::shared_ptr<boost::asio::ip::tcp::socket> &userSocket,
+        const std::string &command, const std::string &channel);
 
 private:
     ProxyServer &proxyServer_;

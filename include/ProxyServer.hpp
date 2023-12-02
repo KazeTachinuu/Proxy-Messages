@@ -28,6 +28,7 @@ public:
     void notifyAllUsers(const std::string &message, const std::shared_ptr<TCP::socket> &excludedSocket, const std::string &channel);
     std::size_t getUserCount(const std::string &channel);
     void notifyNewUser(const std::shared_ptr<TCP::socket> &newUserSocket, const std::string &channel);
+    std::string getUserList(const std::string &channel);
 
 private:
     void startAccept();
