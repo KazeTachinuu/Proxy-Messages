@@ -6,31 +6,64 @@
 
 namespace po = boost::program_options;
 
+void printHelp(const po::options_description &desc, const po::options_description &hidden)
+{
+    std::cout << "Usage: ./main --mode User/Proxy --secret <secret>\n" << desc << std::endl;
+    std::cout << hidden << std::endl;
+}
+
+void printVersion()
+{
+    std::cout << "Snowpack Proxy Test Version 3.5" << std::endl;
+}
+
 int main(int argc, char *argv[])
 {
-    po::options_description desc("Allowed options");
+    po::options_description desc("Program options");
+    desc.add_options()
+        ("mode,m", po::value<std::string>()->default_value("Proxy"),
+        "Mode to run the program in. (Proxy/User)")
+        ("secret,s", po::value<std::string>()->default_value("0"),
+        "Secret to use for the proxy server.");
 
-    desc.add_options()("mode", po::value<std::string>()->required(),
-                       "Mode Selection Proxy/User")(
-        "channel", po::value<std::string>()->default_value("0"),
-        "Channel for communication (default is '0')");
-
+    po::options_description hidden("Info options");
+    hidden.add_options()
+        ("version,V", "Print version information")
+        ("help,h", "Print help message");
     po::variables_map vm;
 
     try
     {
-        po::store(po::parse_command_line(argc, argv, desc), vm);
+        // Parse command line arguments with also hidden options
+        po::options_description all_options;
+        all_options.add(desc).add(hidden);
+        po::store(po::parse_command_line(argc, argv, all_options), vm);
         po::notify(vm);
+
+
+
+
+        if (argc == 1 || vm.count("help") )
+        {
+            printHelp(desc, hidden);
+            return 0;
+        }
+
+        if (vm.count("version"))
+        {
+            printVersion();
+            return 0;
+        }
     }
     catch (po::error &e)
     {
         std::cerr << "ERROR: " << e.what() << "\n";
-        std::cerr << desc << "\n";
+        printHelp(desc, hidden);
         return 1;
     }
 
     std::string mode = vm["mode"].as<std::string>();
-    std::string channel = vm["channel"].as<std::string>();
+    std::string channel = vm["secret"].as<std::string>();
 
     try
     {
@@ -42,23 +75,7 @@ int main(int argc, char *argv[])
         else if (mode == "User")
         {
             BasicUser user(channel);
-            try
-            {
-                user.start();
-            }
-            catch (const boost::system::system_error &e)
-            {
-                if (e.code() == boost::asio::error::connection_refused)
-                {
-                    std::cerr << "ERROR: Connection refused. The proxy server "
-                                 "may not be running yet.\n";
-                }
-                else
-                {
-                    std::cerr << "ERROR: " << e.what() << "\n";
-                }
-                return 1;
-            }
+            user.start();
         }
         else
         {
@@ -69,7 +86,20 @@ int main(int argc, char *argv[])
     catch (const po::validation_error &e)
     {
         std::cerr << "ERROR: Invalid mode. Use --mode Proxy or --mode User.\n";
-        std::cerr << "Allowed options:\n" << desc << "\n";
+        printHelp(desc, hidden);
+        return 1;
+    }
+    catch (const boost::system::system_error &e)
+    {
+        if (e.code() == boost::asio::error::connection_refused)
+        {
+            std::cerr << "ERROR: Connection refused. The proxy server may not "
+                         "be running yet.\n";
+        }
+        else
+        {
+            std::cerr << "ERROR: " << e.what() << "\n";
+        }
         return 1;
     }
     catch (const std::exception &e)

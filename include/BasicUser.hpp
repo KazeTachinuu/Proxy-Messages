@@ -3,15 +3,17 @@
 
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <iostream>
 #include <future>
+#include <iostream>
 #include <thread>
 
-class BasicUser {
+class BasicUser
+{
 public:
     BasicUser(const std::string &channel);
 
     void start();
+    void sendMessage(const std::string &message);
 
 private:
     static const std::string MSG_PREFIX;
@@ -28,10 +30,11 @@ private:
     std::string channel_;
 
     void readUserInput();
-    void sendMessage(const std::string &message);
+
     void connectToServer();
     void startRead();
-    void handleRead(const boost::system::error_code &error, std::size_t bytes_received);
+    void handleRead(const boost::system::error_code &error,
+                    std::size_t bytes_received);
     void handleCommandResponse(const std::string &message);
     void startDisconnectTimer();
     void stopDisconnectTimer();

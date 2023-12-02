@@ -37,6 +37,22 @@ void BasicUser::start()
     inputThread.join();
 }
 
+void BasicUser::sendMessage(const std::string &message)
+{
+    boost::asio::write(socket_, boost::asio::buffer(message + NEWLINE));
+}
+
+void BasicUser::connectToServer()
+{
+    boost::asio::ip::tcp::resolver resolver(io_context_);
+    boost::asio::ip::tcp::resolver::query query("127.0.0.1", "12345");
+    boost::asio::ip::tcp::resolver::iterator endpoint_iterator =
+        resolver.resolve(query);
+
+    boost::asio::connect(socket_, endpoint_iterator);
+
+    sendMessage("[" + channel_ + "]");
+}
 
 void BasicUser::handleDisconnect()
 {
@@ -58,15 +74,18 @@ void BasicUser::startReadUntilUserCount()
 
                 std::cout << message << std::endl;
 
-                if (message.find(INFO_PREFIX + "UserCount: ") != std::string::npos)
+                if (message.find(INFO_PREFIX + "UserCount: ")
+                    != std::string::npos)
                 {
                     handleUserCountMessage(message);
                 }
-                else if (message.find(INFO_PREFIX + "New user connected:") != std::string::npos)
+                else if (message.find(INFO_PREFIX + "New user connected:")
+                         != std::string::npos)
                 {
                     handleNewUserConnectedMessage();
                 }
-                else if (message.find(CMD_PREFIX + "SHUTDOWN") != std::string::npos)
+                else if (message.find(CMD_PREFIX + "SHUTDOWN")
+                         != std::string::npos)
                 {
                     handleShutdownMessage();
                 }
@@ -130,11 +149,39 @@ void BasicUser::readUserInput()
         // Read a line from the console
         std::getline(std::cin, userInput);
 
-        // Check if the user wants to exit
-        if (userInput == "exit")
+
+        if (userInput == "/help")
+        {
+            std::cout << "Commands:\n"
+                         "/help - Print this help message\n"
+                         "/exit - Exit the program\n"
+                         "/usercount - Get the number of users connected\n"
+                         "/ping <message> - Send a message to the server and "
+                         "wait for an echo reply\n\n";
+            continue;
+        }
+        else if (userInput == "/exit")
         {
             break;
         }
+        else if (userInput == "/usercount")
+        {
+            sendMessage(CMD_PREFIX + "GETUSERCOUNT");
+            continue;
+        }
+        else if (userInput.find("/ping ") == 0)
+        {
+            std::size_t pingPos = userInput.find(' ');
+            if (pingPos == std::string::npos)
+            {
+                std::cout << "No message to ping.\n\n";
+                continue;
+            }
+            std::string msg = userInput.substr(pingPos + 1);
+            sendMessage(CMD_PREFIX + "ECHOREPLY " + msg);
+            continue;
+        }
+
 
         // If no MSG or CMD prefix, add MSG
         if (userInput.find(MSG_PREFIX) != 0 && userInput.find(CMD_PREFIX) != 0)
@@ -150,22 +197,6 @@ void BasicUser::readUserInput()
     io_context_.stop();
 }
 
-void BasicUser::sendMessage(const std::string &message)
-{
-    boost::asio::write(socket_, boost::asio::buffer(message + NEWLINE));
-}
-
-void BasicUser::connectToServer()
-{
-    boost::asio::ip::tcp::resolver resolver(io_context_);
-    boost::asio::ip::tcp::resolver::query query("127.0.0.1", "12345");
-    boost::asio::ip::tcp::resolver::iterator endpoint_iterator =
-        resolver.resolve(query);
-
-    boost::asio::connect(socket_, endpoint_iterator);
-
-    sendMessage("[" + channel_ + "]");
-}
 
 void BasicUser::startRead()
 {
@@ -199,21 +230,19 @@ void BasicUser::handleCommandResponse(const std::string &message)
     }
     if (message.find(INFO_PREFIX) != std::string::npos)
     {
-        std::cout << message << std::endl;
+        std::cout << message << std::endl << std::endl;
     }
     else if (message.find(MSG_PREFIX) != std::string::npos)
     {
-
         // Extract username and message body
-        std::string username = message.substr(0, message.find(']')+1);
+        std::string username = message.substr(0, message.find(']') + 1);
         std::string messageBody = message.substr(message.find(MSG_PREFIX) + 5);
         std::cout << username << ": " << messageBody << std::endl;
-
     }
     else if (message.find(CMD_PREFIX + "ECHOREPLY") != std::string::npos)
     {
         // Echo reply received from the server
-        std::cout << "Echo reply received: " << message << std::endl;
+        std::cout << "Echo reply received: " << message << std::endl << std::endl;
         size_t pos = message.find("ECHOREPLY");
         sendMessage(MSG_PREFIX + message.substr(pos + 11));
     }
@@ -226,7 +255,6 @@ void BasicUser::handleCommandResponse(const std::string &message)
     else
     {
         std::cout << "Unknown message: " << message << std::endl;
-
     }
 }
 
@@ -248,7 +276,6 @@ void BasicUser::stopDisconnectTimer()
     disconnectTimer_.cancel();
 }
 
-
 void BasicUser::disconnectAndStop()
 {
     socket_.close();
@@ -256,6 +283,4 @@ void BasicUser::disconnectAndStop()
     io_context_.stop();
 
     exit(0);
-
 }
-

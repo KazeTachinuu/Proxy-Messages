@@ -3,13 +3,16 @@
 #include <iostream>
 #include <string>
 
+
 ProxyServer::ProxyServer(unsigned short port)
     : acceptor_(
         io_context_,
-        boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
-    , port_(port)
-    , commandHandler_(std::make_unique<CommandHandler>(*this))
-{}
+        boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
+    port_(port),
+    commandHandler_(std::make_unique<CommandHandler>(*this))
+{
+    // Additional constructor initialization code, if needed
+}
 
 void ProxyServer::start()
 {
@@ -20,28 +23,122 @@ void ProxyServer::start()
         std::string input;
         while (std::getline(std::cin, input))
         {
-            if (input == "exit")
-            {
-                stopServer();
-                break;
-            }
+            // Call the member function instead of the standalone function
+            handleInputCommands(input);
         }
     });
     io_context_.run();
 }
 
+// Fix the missing return type
+void ProxyServer::handleInputCommands(const std::string &input)
+{
+    if (input == "/help")
+    {
+        std::cout << "Available commands:\n"
+                  << "/exit, /shutdown - stop the server\n"
+                  << "/help - print this help message\n"
+                  << "/list - list all connected users\n"
+                  << "/kill <channel> - disconnect all users from the given channel\n"
+                  << "/kick <user> - disconnect the given user\n"
+            << std::endl;
+    }
+    else if (input == "/shutdown" || input == "/exit")
+    {
+        stopServer();
+    }
+    else if (input == "/list")
+    {//list the channels like so [channel1] User1, User2, User3
+        std::cout << "Connected users:\n";
+        for (const auto &channel : channels_)
+        {
+            std::cout << "[" << channel.first << "] ";
+            for (const auto &userSocket : channel.second)
+            {
+                std::cout << connectedUsers_[userSocket] << " " ;
+            }
+            std::cout << std::endl << std::endl;
+        }
+    }
+    else if (input.find("/kick") == 0)
+    {
+        //get the username but check if it was provided
+        //check if the command have an argument
+        std::size_t usernameStart = input.find(' ');
+        if (usernameStart == std::string::npos)
+        {
+            std::cout << "No username provided.\n\n";
+            return;
+        }
+        std::string username = input.substr(usernameStart + 1);
+
+
+        for (const auto &channel : channels_)
+        {
+            for (const auto &userSocket : channel.second)
+            {
+                if (connectedUsers_[userSocket] == username)
+                {
+                    std::cout << "Kicking " << username << std::endl;
+                    notifyUser(userSocket, "[INFO]Kicked by server");
+                    notifyUser(userSocket, "[CMD]SHUTDOWN");
+                    notifyAllUsers("[INFO]" + username + " kicked by server", userSocket, userChannels_[userSocket]);
+                    RemoveUser(userSocket);
+                    return;
+                }
+            }
+        }
+        std::cout << "User " << username << " not found.\n\n";
+    }
+    else if (input.find("/kill") == 0)
+    {
+
+        std::size_t channelStart = input.find(' ');
+        if (channelStart == std::string::npos)
+        {
+            std::cout << "No channel provided.\n\n";
+            return;
+        }
+        std::string channel = input.substr(channelStart + 1);
+        if (channels_.count(channel))
+        {
+            std::cout << "Killing channel " << channel << std::endl;
+            //copy the vector of sockets to a new vector to avoid iterator invalidation
+            std::vector<std::shared_ptr<TCP::socket>> sockets = channels_[channel];
+            for (const auto &userSocket : sockets)
+            {
+                notifyUser(userSocket, "[INFO]Killing channel " + channel);
+                notifyUser(userSocket, "[CMD]SHUTDOWN");
+                RemoveUser(userSocket);
+            }
+
+            //remove the channel from the map
+            channels_.erase(channel);
+        }
+        else
+        {
+            std::cout << "Channel " << channel << " not found.\n\n";
+        }
+    }
+    else
+    {
+        std::cout << "Unknown command: " << input << std::endl << std::endl;
+    }
+}
+
+
 void ProxyServer::notifyUser(
-    const std::shared_ptr<boost::asio::ip::tcp::socket> &userSocket,
+    const std::shared_ptr<TCP::socket> &userSocket,
     const std::string &message)
 {
     boost::asio::async_write(
-        *userSocket, boost::asio::buffer(message),
+        *userSocket, boost::asio::buffer(message+"\n"),
         [](const boost::system::error_code &, std::size_t) {});
 }
 
 void ProxyServer::notifyAllUsers(
     const std::string &message,
-    const std::shared_ptr<boost::asio::ip::tcp::socket> &excludedSocket,
+    const std::shared_ptr<TCP::socket> &excludedSocket,
     const std::string &channel)
 {
     for (const auto &userSocket : channels_[channel])
@@ -59,32 +156,30 @@ std::size_t ProxyServer::getUserCount(const std::string &channel)
 }
 
 void ProxyServer::notifyNewUser(
-    const std::shared_ptr<boost::asio::ip::tcp::socket> &newUserSocket,
+    const std::shared_ptr<TCP::socket> &newUserSocket,
     const std::string &channel)
 {
     std::string username = connectedUsers_[newUserSocket];
 
-    // Generate a unique username for the new user
-    std::cout << "New user connected: " << username << std::endl;
 
     // Store the username and channel in the map
     channels_[channel].push_back(newUserSocket);
     connectedUsers_[newUserSocket] = username;
     userChannels_[newUserSocket] = channel;
 
-    notifyAllUsers("[INFO]New user connected: " + username + "\n",
+    notifyAllUsers("[INFO]New user connected: " + username,
                    newUserSocket, channel);
 }
 
 void ProxyServer::startAccept()
 {
     acceptor_.async_accept([this](const boost::system::error_code &error,
-                                  boost::asio::ip::tcp::socket userSocket) {
+                                  TCP::socket userSocket) {
         if (!error)
         {
-            auto newUserSocket = std::make_shared<boost::asio::ip::tcp::socket>(
+            auto newUserSocket = std::make_shared<TCP::socket>(
                 std::move(userSocket));
-            std::cout << "User connected.\n";
+//            std::cout << "User connected.\n";
             userSockets_.push_back(newUserSocket);
             handleNewUser(newUserSocket);
         }
@@ -99,7 +194,7 @@ void ProxyServer::stopServer()
     // Close all the user sockets
     for (const auto &userSocket : userSockets_)
     {
-        notifyUser(userSocket, "[CMD]SHUTDOWN\n");
+        notifyUser(userSocket, "[CMD]SHUTDOWN");
     }
     exit(0);
 }
@@ -137,7 +232,7 @@ MessageType ProxyServer::getMessageType(const std::string &message)
 }
 
 void ProxyServer::handleCommunication(
-    const std::shared_ptr<boost::asio::ip::tcp::socket> &newUserSocket)
+    const std::shared_ptr<TCP::socket> &newUserSocket)
 {
     const std::string channel = userChannels_[newUserSocket];
     boost::asio::async_read_until(
@@ -167,7 +262,7 @@ void ProxyServer::handleCommunication(
                     handleMessage(newUserSocket, message);
                     break;
                 case MessageType::INFO:
-                    notifyUser(newUserSocket, "[INFO]Message received.\n");
+                    notifyUser(newUserSocket, "[INFO]Message received.");
                     break;
                 default:
                     std::cerr << "Unknown message type received.\n";
@@ -175,23 +270,7 @@ void ProxyServer::handleCommunication(
             }
             else
             {
-                std::cerr << connectedUsers_[newUserSocket]
-                          << " disconnected.\n";
-
-                notifyAllUsers("[INFO]" + connectedUsers_[newUserSocket]
-                                   + " disconnected.\n",
-                               newUserSocket, channel);
-                // Remove the user from all the maps
-                channels_[channel].erase(std::remove(channels_[channel].begin(),
-                                                     channels_[channel].end(),
-                                                     newUserSocket),
-                                         channels_[channel].end());
-                connectedUsers_.erase(newUserSocket);
-                userChannels_.erase(newUserSocket);
-                userSockets_.erase(std::remove(userSockets_.begin(),
-                                               userSockets_.end(),
-                                               newUserSocket),
-                                   userSockets_.end());
+                RemoveUser(newUserSocket);
             }
 
             handleCommunication(newUserSocket);
@@ -199,7 +278,7 @@ void ProxyServer::handleCommunication(
 }
 
 void ProxyServer::handleMessage(
-    const std::shared_ptr<boost::asio::ip::tcp::socket> &userSocket,
+    const std::shared_ptr<TCP::socket> &userSocket,
     const std::string &message)
 {
     // Use the user's channel information stored during the initial connection
@@ -213,7 +292,7 @@ void ProxyServer::handleMessage(
 }
 
 void ProxyServer::handleNewUser(
-    const std::shared_ptr<boost::asio::ip::tcp::socket> &userSocket)
+    const std::shared_ptr<TCP::socket> &userSocket)
 {
     // Read the initial message to determine the user's channel
     boost::asio::async_read_until(
@@ -238,11 +317,22 @@ void ProxyServer::handleNewUser(
 }
 
 void ProxyServer::handleInitialUserMessage(
-    const std::shared_ptr<boost::asio::ip::tcp::socket> &userSocket,
+    const std::shared_ptr<TCP::socket> &userSocket,
     const std::string &message)
 {
-    std::string username = "User" + std::to_string(connectedUsers_.size() + 1);
+    //create a username for the user
+    //check if the username is already taken
+
+    int id = 1;
+    std::string username = "User" + std::to_string(id);
+    while (std::find_if(connectedUsers_.begin(), connectedUsers_.end(), [username](const std::pair<std::shared_ptr<TCP::socket>, std::string> &user) { return user.second == username; }) != connectedUsers_.end())
+    {
+        id++;
+        username = "User" + std::to_string(id);
+    }
     connectedUsers_[userSocket] = username;
+
+    std::cout << "New user connected: " << username << std::endl;
 
     // Extract the channel information from the initial message
     std::cout << "Received channel assignement from [" << username << "]:\n"
@@ -262,7 +352,7 @@ void ProxyServer::handleInitialUserMessage(
                   << std::endl;
 
         notifyUser(userSocket,
-                   "Welcome " + username + " to channel " + channel + "\n");
+                   "Welcome " + username + " to channel " + channel );
 
         notifyNewUser(userSocket, channel);
     }
@@ -271,4 +361,24 @@ void ProxyServer::handleInitialUserMessage(
         std::cerr
             << "Invalid initial message format. Missing channel information.\n";
     }
+}
+
+void ProxyServer::RemoveUser(const std::shared_ptr<TCP::socket> &userSocket)
+{
+
+    std::cout << connectedUsers_[userSocket] << " disconnected.\n";
+
+    notifyAllUsers("[INFO]" + connectedUsers_[userSocket] + " disconnected", userSocket, userChannels_[userSocket]);
+    // Remove the user from all the maps
+    const std::string channel = userChannels_[userSocket];
+    userChannels_.erase(userSocket);
+    connectedUsers_.erase(userSocket);
+    userSockets_.erase(std::remove(userSockets_.begin(), userSockets_.end(), userSocket), userSockets_.end());
+    channels_[channel].erase(std::remove(channels_[channel].begin(), channels_[channel].end(), userSocket), channels_[channel].end());
+    if (channels_[channel].empty())
+    {
+        channels_.erase(channel);
+    }
+
+
 }

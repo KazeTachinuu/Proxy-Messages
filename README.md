@@ -7,7 +7,7 @@ Snowpack Proxy Server is a simple proxy server implementation using Boost.Asio.
 - [Features](#features)
 - [Getting Started](#getting-started)
 - [Usage](#usage)
-- [Tests](#tests)
+- [Commands](#commands)
 
 
 ## Introduction
@@ -36,39 +36,28 @@ Once the Snowpack Proxy Server is running, users can connect to it using a TCP c
 Example usage:
 
 1. Start the proxy server: `./main --mode Proxy`
-2. Connect users to the server using TCP clients: `./main --mode User`
-3. Exchange messages between connected users through the proxy.
+2. Connect users to the server using TCP clients: `./main --mode User --secret <secret>`
+3. Exchange messages between connected users with the same secret on the proxy server.
 
-## Tests
+## Commands
 
-### Test Case 1: Manage absence of correspondent
-- P is waiting for incoming connection
-- A connects to P, P confirms that the connection is ok but that there is no other connected user, A is waiting up to 30 secs. After 30 secs, A disconnects from P because nobody has connected to the proxy.
+Once the Snowpack Proxy Server is running, the following commands can be used to manage user connections:
 
-To run Test Case 1, first run the proxy in a Terminal with :
-```shell
-./main --mode Proxy
-```
-Then run the test_case_1 executable and watch the magic
-```bash
-make test_case_1
-./test_case_1
-```
+### Server Commands
 
-### Test Case 2: Manage basic communication
-- P is waiting for incoming connection
-- A connects to P, P confirms that the connection is ok but that there is no other connected user, A is waiting up to 30 secs.
-- B connects to P before the remaining time of 30 secs. P informs B that he will be connected with the connected user A.
-- A is informed that it has been connected to B by P.
-- A sends a message “hello” to B relayed by P (P prints the message in its terminal before sending the message to B).
-- B prints the message in its terminal
+- `/list` - Lists all connected users.
+- `/kill <channel>` - Disconnects all users with the specified channel.
+- `/kick <user>` - Disconnects the specified user.
+- `/exit, /shutdown` - Stop the proxy server.
+- `/help` - Displays a list of available commands.
 
-To run Test Case 2, first run the proxy in a Terminal with :
-```shell
-./main --mode Proxy
-```
-Then run the test_case_2 executable and watch the magic
-```bash
-make test_case_2
-./test_case_2
-```
+### User Commands
+
+- `/usercount` - Displays the number of connected users.
+- `/ping` <message> - Sends a message to all connected users.
+- `/exit` - Exits the user client.
+- `/help` - Displays a list of available commands.
+
+
+
+
