@@ -46,7 +46,7 @@ Once the Snowpack Proxy Server is running, the following commands can be used to
 ### Server Commands
 
 - `/list` - Lists all connected users.
-- `/kill <channel>` - Disconnects all users with the specified channel.
+- `/kill <channelNum>` - Disconnects all users with the specified channel.
 - `/kick <user>` - Disconnects the specified user.
 - `/exit, /shutdown` - Stop the proxy server.
 - `/help` - Displays a list of available commands.
@@ -54,7 +54,7 @@ Once the Snowpack Proxy Server is running, the following commands can be used to
 ### User Commands
 
 - `/usercount` - Displays the number of connected users.
-- `/ping` <message> - Sends a message to all connected users.
+- `/ping <message>` - Sends a message to all connected users.
 - `/exit` - Exits the user client.
 - `/list` - List all users in the channel.
 - `/help` - Displays a list of available commands.
