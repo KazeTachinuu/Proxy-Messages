@@ -4,6 +4,7 @@ Snowpack Proxy Server is a simple proxy server implementation using Boost.Asio.
 
 ## Table of Contents
 - [Introduction](#introduction)
+- [Requirements](#requirements)
 - [Features](#features)
 - [Getting Started](#getting-started)
 - [Usage](#usage)
@@ -13,6 +14,11 @@ Snowpack Proxy Server is a simple proxy server implementation using Boost.Asio.
 ## Introduction
 
 Snowpack Proxy Server is a lightweight proxy server built with Boost.Asio, designed to facilitate communication between multiple users. It allows users to connect and exchange messages through a central proxy, providing a basic foundation for distributed systems and communication testing.
+
+## Requirements
+
+- Boost C++ library for ASIO
+- Cmake and g++ for compilation
 
 ## Features
 
