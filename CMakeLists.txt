@@ -11,7 +11,7 @@ find_package(Boost REQUIRED COMPONENTS program_options system thread)
 # Include directories
 include_directories(include ${Boost_INCLUDE_DIRS})
 
-# Add your source files and headers
+
 set(SOURCES
         src/BasicUser.cpp
         src/ProxyServer.cpp
