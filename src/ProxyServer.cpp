@@ -3,10 +3,10 @@
 #include <iostream>
 #include <string>
 
-ProxyServer::ProxyServer(unsigned short port)
-    : acceptor_(
-        io_context_,
-        boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
+ProxyServer::ProxyServer(std::string port)
+    : acceptor_(io_context_,
+                boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(),
+                                               std::stoi(port)))
     , port_(port)
     , commandHandler_(std::make_unique<CommandHandler>(*this))
 {
@@ -29,19 +29,24 @@ void ProxyServer::start()
     io_context_.run();
 }
 
+void ProxyServer::CommandHelp()
+{
+    std::cout
+        << "Available commands:\n"
+        << "/exit, /shutdown - stop the server\n"
+        << "/help - print this help message\n"
+        << "/list - list all connected users\n"
+        << "/kill <channel> - disconnect all users from the given channel\n"
+        << "/kick <user> - disconnect the given user\n"
+        << std::endl;
+}
+
 // Fix the missing return type
 void ProxyServer::handleInputCommands(const std::string &input)
 {
     if (input == "/help")
     {
-        std::cout
-            << "Available commands:\n"
-            << "/exit, /shutdown - stop the server\n"
-            << "/help - print this help message\n"
-            << "/list - list all connected users\n"
-            << "/kill <channel> - disconnect all users from the given channel\n"
-            << "/kick <user> - disconnect the given user\n"
-            << std::endl;
+        CommandHelp();
     }
     else if (input == "/shutdown" || input == "/exit")
     {
@@ -124,6 +129,7 @@ void ProxyServer::handleInputCommands(const std::string &input)
     else
     {
         std::cout << "Unknown command: " << input << std::endl << std::endl;
+        CommandHelp();
     }
 }
 

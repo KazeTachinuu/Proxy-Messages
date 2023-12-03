@@ -33,6 +33,7 @@ private:
     std::string ip_;
 
     void readUserInput();
+    void CommandHelp();
 
     void connectToServer();
     void startRead();

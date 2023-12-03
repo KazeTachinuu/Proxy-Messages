@@ -145,6 +145,17 @@ void BasicUser::handleOtherUsersConnected()
     startRead();
 }
 
+void BasicUser::CommandHelp()
+{
+    std::cout << "Commands:\n"
+                 "/help - Print this help message\n"
+                 "/exit - Exit the program\n"
+                 "/usercount - Get the number of users connected\n"
+                 "/ping <message> - Send a message to the server and "
+                 "wait for an echo reply\n"
+                 "/list - List all users in the channel\n\n";
+}
+
 void BasicUser::readUserInput()
 {
     std::string userInput;
@@ -157,14 +168,7 @@ void BasicUser::readUserInput()
         {
             if (userInput == "/help")
             {
-                std::cout
-                    << "Commands:\n"
-                       "/help - Print this help message\n"
-                       "/exit - Exit the program\n"
-                       "/usercount - Get the number of users connected\n"
-                       "/ping <message> - Send a message to the server and "
-                       "wait for an echo reply\n"
-                       "/list - List all users in the channel\n\n";
+                CommandHelp();
                 continue;
             }
             else if (userInput == "/exit")
@@ -194,7 +198,9 @@ void BasicUser::readUserInput()
                 continue;
             }
 
-            std::cout << "Command not found: " << userInput << std::endl;
+            std::cout << "Unknown command: " << userInput << std::endl
+                      << std::endl;
+            CommandHelp();
             continue;
         }
 

@@ -30,11 +30,11 @@ int main(int argc, char *argv[])
 
     po::options_description hidden("Info options");
     hidden.add_options()("version,V", "Print version information")(
-        "help,h", "Print help message")
-        ("port,p", po::value<std::string>()->default_value("12345"),
-         "Port to use for the proxy server.")
-        ("ip,i", po::value<std::string>()->default_value("127.0.0.1"),
-         "IP address to use for the proxy server.");
+        "help,h", "Print help message")(
+        "port,p", po::value<std::string>()->default_value("12345"),
+        "Port to use for the proxy server.")(
+        "ip,i", po::value<std::string>()->default_value("127.0.0.1"),
+        "IP address to use for the proxy server.");
     po::variables_map vm;
 
     try
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     {
         if (mode == "Proxy")
         {
-            ProxyServer proxy(12345);
+            ProxyServer proxy(port);
             proxy.start();
         }
         else if (mode == "User")
