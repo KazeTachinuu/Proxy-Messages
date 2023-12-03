@@ -1,13 +1,15 @@
 #include "BasicUser.hpp"
 
 #include <future>
+#include <iostream>
 
 const std::string BasicUser::MSG_PREFIX = "[MSG]";
 const std::string BasicUser::CMD_PREFIX = "[CMD]";
 const std::string BasicUser::INFO_PREFIX = "[INFO]";
 const std::string BasicUser::NEWLINE = "\n";
 
-BasicUser::BasicUser(const std::string ip, const std::string port,const std::string &channel)
+BasicUser::BasicUser(const std::string ip, const std::string port,
+                     const std::string &channel)
     : socket_(io_context_)
     , disconnectTimer_(io_context_)
     , waitingTime_(30)
@@ -28,7 +30,7 @@ void BasicUser::start()
         // Wait for handleDisconnect to complete
         disconnectFuture.wait();
 
-        std::cout << "Enter messages to send to the server. Type 'exit' to "
+        std::cout << "Enter messages to send to the server. Type '/exit' to "
                      "quit.\n";
         readUserInput();
     });
@@ -151,41 +153,48 @@ void BasicUser::readUserInput()
         // Read a line from the console
         std::getline(std::cin, userInput);
 
-        if (userInput == "/help")
+        if (userInput.find('/') == 0)
         {
-            std::cout << "Commands:\n"
-                         "/help - Print this help message\n"
-                         "/exit - Exit the program\n"
-                         "/usercount - Get the number of users connected\n"
-                         "/ping <message> - Send a message to the server and "
-                         "wait for an echo reply\n"
-                         "/list - List all users in the channel\n\n";
-            continue;
-        }
-        else if (userInput == "/exit")
-        {
-            break;
-        }
-        else if (userInput == "/list")
-        {
-            sendMessage(CMD_PREFIX + "GETUSERLIST");
-            continue;
-        }
-        else if (userInput == "/usercount")
-        {
-            sendMessage(CMD_PREFIX + "GETUSERCOUNT");
-            continue;
-        }
-        else if (userInput.find("/ping ") == 0)
-        {
-            std::size_t pingPos = userInput.find(' ');
-            if (pingPos == std::string::npos)
+            if (userInput == "/help")
             {
-                std::cout << "No message to ping.\n\n";
+                std::cout
+                    << "Commands:\n"
+                       "/help - Print this help message\n"
+                       "/exit - Exit the program\n"
+                       "/usercount - Get the number of users connected\n"
+                       "/ping <message> - Send a message to the server and "
+                       "wait for an echo reply\n"
+                       "/list - List all users in the channel\n\n";
                 continue;
             }
-            std::string msg = userInput.substr(pingPos + 1);
-            sendMessage(CMD_PREFIX + "ECHOREPLY " + msg);
+            else if (userInput == "/exit")
+            {
+                break;
+            }
+            else if (userInput == "/list")
+            {
+                sendMessage(CMD_PREFIX + "GETUSERLIST");
+                continue;
+            }
+            else if (userInput == "/usercount")
+            {
+                sendMessage(CMD_PREFIX + "GETUSERCOUNT");
+                continue;
+            }
+            else if (userInput.find("/ping") == 0)
+            {
+                std::size_t pingPos = userInput.find(' ');
+                if (pingPos == std::string::npos)
+                {
+                    std::cout << "No message to ping.\n\n";
+                    continue;
+                }
+                std::string msg = userInput.substr(pingPos + 1);
+                sendMessage(CMD_PREFIX + "ECHOREPLY " + msg);
+                continue;
+            }
+
+            std::cout << "Command not found: " << userInput << std::endl;
             continue;
         }
 
