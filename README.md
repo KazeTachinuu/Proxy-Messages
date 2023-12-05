@@ -1,6 +1,6 @@
-# Snowpack Proxy Server
+# Proxy Server
 
-Snowpack Proxy Server is a simple proxy server implementation using Boost.Asio.
+Proxy Server is a simple proxy server implementation using Boost.Asio.
 
 ## Table of Contents
 - [Introduction](#introduction)
@@ -13,7 +13,7 @@ Snowpack Proxy Server is a simple proxy server implementation using Boost.Asio.
 
 ## Introduction
 
-Snowpack Proxy Server is a lightweight proxy server built with Boost.Asio, designed to facilitate communication between multiple users. It allows users to connect and exchange messages through a central proxy, providing a basic foundation for distributed systems and communication testing.
+Proxy Server is a lightweight proxy server built with Boost.Asio, designed to facilitate communication between multiple users. It allows users to connect and exchange messages through a central proxy, providing a basic foundation for distributed systems and communication testing.
 
 ## Requirements
 
@@ -30,14 +30,14 @@ Snowpack Proxy Server is a lightweight proxy server built with Boost.Asio, desig
 
 To get started with the Snowpack Proxy Server, follow these steps:
 
-1. Clone the repository: `git clone https://github.com/KazeTachinuu/Snowpack-proxy-test.git`
-2. Navigate to the project directory: `cd Snowpack-proxy-test`
+1. Clone the repository: `git clone https://github.com/KazeTachinuu/Proxy-Messages.git`
+2. Navigate to the project directory: `cd Proxy-Messages`
 3. Build the project using CMake: `mkdir build && cd build && cmake .. && make main`
 4. Run the proxy server: `./main --mode Proxy`
 
 ## Usage
 
-Once the Snowpack Proxy Server is running, users can connect to it using a TCP client. The server handles user connections and facilitates communication between them.
+Once the Proxy Server is running, users can connect to it using a TCP client. The server handles user connections and facilitates communication between them.
 
 Example usage:
 
@@ -47,7 +47,7 @@ Example usage:
 
 ## Commands
 
-Once the Snowpack Proxy Server is running, the following commands can be used to manage user connections:
+Once the Proxy Server is running, the following commands can be used to manage user connections:
 
 ### Server Commands
 
