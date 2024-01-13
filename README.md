@@ -28,7 +28,7 @@ Proxy Server is a lightweight proxy server built with Boost.Asio, designed to fa
 
 ## Getting Started
 
-To get started with the Snowpack Proxy Server, follow these steps:
+To get started with the Proxy Server, follow these steps:
 
 1. Clone the repository: `git clone https://github.com/KazeTachinuu/Proxy-Messages.git`
 2. Navigate to the project directory: `cd Proxy-Messages`
